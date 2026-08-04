@@ -1,0 +1,27 @@
+{
+  "name": "techpulse",
+  "version": "1.0.0",
+  "description": "Developer Ecosystem Intelligence Graph powered by CognoDB",
+  "main": "server/src/server.js",
+  "scripts": {
+    "start": "node server/src/server.js",
+    "dev": "nodemon server/src/server.js",
+    "seed": "node server/seed/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.6.1",
+    "helmet": "^8.3.0",
+    "morgan": "^1.11.0",
+    "neo4j-driver": "^5.20.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

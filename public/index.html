@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechPulse</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        <span>TechPulse</span>
+      </div>
+      <div class="workspace-switcher">
+        <span>my-knowledge-graph</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 10 12 14 16 10"></polyline></svg>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <button class="nav-item active" data-page="home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-page="graph">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          Graph Explorer
+        </button>
+        <button class="nav-item" data-page="queries">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Run Queries
+        </button>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Database</div>
+        <button class="nav-item" data-page="contributors">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Contributors
+        </button>
+        <button class="nav-item" data-page="projects">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          Projects
+        </button>
+        <button class="nav-item" data-page="organizations">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+          Organizations
+        </button>
+      <div class="nav-section">
+        <div class="nav-section-title">Governance</div>
+        <button class="nav-item" data-page="auth">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Access Control (ReBAC)
+        </button>
+      </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div class="db-status" id="db-status">
+        <div class="db-dot pulse" id="db-dot"></div>
+        <span id="db-label">Connecting...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="breadcrumb" id="topbar-breadcrumb">
+        Dashboard
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+        <div class="avatar-sm">Y</div>
+      </div>
+    </header>
+
+    <div class="scroll-area">
+      <!-- ═══ HOME PAGE ══════════════════════════════════════════════════════ -->
+      <div class="page active" id="page-home">
+        <div class="page-header">
+          <h1 class="page-title">Overview</h1>
+        </div>
+        
+        <div class="metrics-row" id="home-stats">
+          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
+          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
+          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
+          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Top Contributors</h2>
+              <button class="btn-text btn-sm" data-page="contributors">View all</button>
+            </div>
+            <div class="panel-body" id="home-contributors">
+              <div class="skeleton skeleton-row"></div>
+              <div class="skeleton skeleton-row"></div>
+              <div class="skeleton skeleton-row"></div>
+            </div>
+          </div>
+          
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Active Projects</h2>
+              <button class="btn-text btn-sm" data-page="projects">View all</button>
+            </div>
+            <div class="panel-body" id="home-projects">
+              <div class="skeleton skeleton-row"></div>
+              <div class="skeleton skeleton-row"></div>
+              <div class="skeleton skeleton-row"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ GRAPH PAGE ══════════════════════════════════════════════════════ -->
+      <div class="page" id="page-graph">
+        <div class="graph-layout">
+          <div class="graph-header">
+            <div class="graph-controls" id="graph-filter-controls">
+              <button class="filter-btn active" data-type="all">All Types</button>
+              <button class="filter-btn" data-type="Contributor">Contributors</button>
+              <button class="filter-btn" data-type="Project">Projects</button>
+              <button class="filter-btn" data-type="Organization">Organizations</button>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="graph-reset">Reset View</button>
+          </div>
+          <div id="graph-container">
+            <div id="graph-loading" class="empty-state">Loading graph data...</div>
+            <div id="graph-tooltip"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CONTRIBUTORS PAGE ═══════════════════════════════════════════════ -->
+      <div class="page" id="page-contributors">
+        <div id="contributors-list-view">
+          <div class="page-header">
+            <h1 class="page-title">Contributors</h1>
+          </div>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Influence Score</th>
+                  <th>Followers</th>
+                  <th>Projects</th>
+                  <th>Organization</th>
+                </tr>
+              </thead>
+              <tbody id="contributors-table-body">
+                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
+                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="contributors-detail-view" style="display:none">
+          <button class="btn-back" id="contributors-back">← Back to Contributors</button>
+          <div class="detail-layout" id="contributor-detail-panel">
+            <div class="detail-sidebar" id="contributor-sidebar"></div>
+            <div class="detail-main" id="contributor-main"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PROJECTS PAGE ═══════════════════════════════════════════════════ -->
+      <div class="page" id="page-projects">
+        <div id="projects-list-view">
+          <div class="page-header">
+            <h1 class="page-title">Projects</h1>
+          </div>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Stars</th>
+                  <th>Language</th>
+                  <th>Forks</th>
+                </tr>
+              </thead>
+              <tbody id="projects-table-body">
+                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="projects-detail-view" style="display:none">
+          <button class="btn-back" id="projects-back">← Back to Projects</button>
+          <div class="detail-layout" id="project-detail-panel">
+            <div class="detail-sidebar" id="project-sidebar"></div>
+            <div class="detail-main" id="project-main"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ORGANIZATIONS PAGE ══════════════════════════════════════════════ -->
+      <div class="page" id="page-organizations">
+        <div class="page-header">
+          <h1 class="page-title">Organizations</h1>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Organization</th>
+                <th>Type</th>
+                <th>Country</th>
+              </tr>
+            </thead>
+            <tbody id="orgs-table-body">
+              <tr><td colspan="3" class="skeleton skeleton-row"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ QUERIES PAGE ════════════════════════════════════════════════════ -->
+      <div class="page" id="page-queries">
+        <div class="page-header">
+          <h1 class="page-title">Graph Queries</h1>
+        </div>
+        
+        <div class="queries-grid">
+          <!-- Left Sidebar for Query List -->
+          <div class="query-list">
+            <button class="query-nav-btn active" data-q="1">1. Collaboration Network</button>
+            <button class="query-nav-btn" data-q="2">2. Supply-Chain Risk</button>
+            <button class="query-nav-btn" data-q="3">3. Graph Data Science: Influence</button>
+            <button class="query-nav-btn" data-q="4">4. Transitive Dependencies</button>
+            <button class="query-nav-btn" data-q="5">5. Shortest Path</button>
+          </div>
+          
+          <!-- Right Content Area -->
+          <div class="query-content">
+            
+            <div class="query-panel" id="q1-card" style="display:block">
+              <div class="query-panel-header">
+                <h2>Collaboration Network (2-hop)</h2>
+                <div class="query-actions">
+                  <select class="select-input" id="q1-contributor-select"></select>
+                  <button class="btn btn-primary" id="q1-run">Run Query</button>
+                </div>
+              </div>
+              <pre class="cypher-block">MATCH path = (start:Contributor {id: $id})-[:CONTRIBUTED_TO*1..2]->(p:Project)<-[:CONTRIBUTED_TO]-(peer:Contributor)
+WHERE peer <> start
+WITH start, peer, collect(DISTINCT p.name) AS sharedProjects, length(path) AS hops
+RETURN peer, sharedProjects, min(hops) AS minHops</pre>
+              <div id="q1-results" class="query-results-area"></div>
+            </div>
+
+            <div class="query-panel" id="q2-card" style="display:none">
+              <div class="query-panel-header">
+                <h2>Supply-Chain Risk</h2>
+                <div class="query-actions">
+                  <button class="btn btn-primary" id="q2-run">Run Query</button>
+                </div>
+              </div>
+              <pre class="cypher-block">MATCH (orgA:Organization)<-[:PART_OF]-(projA:Project)-[:DEPENDS_ON]->(projB:Project)-[:PART_OF]->(orgB:Organization)
+WHERE orgA <> orgB
+MATCH (c:Contributor)-[:CONTRIBUTED_TO]->(projA)
+MATCH (c)-[:CONTRIBUTED_TO]->(projB)
+RETURN orgA.name, projA.name, projB.name, orgB.name, c.name</pre>
+              <div id="q2-results" class="query-results-area"></div>
+            </div>
+
+            <div class="query-panel" id="q3-card" style="display:none">
+              <div class="query-panel-header">
+                <h2>Graph Data Science: Influence Ranking</h2>
+                <div class="query-actions">
+                  <button class="btn btn-primary" id="q3-run">Run Algorithm</button>
+                </div>
+              </div>
+              <pre class="cypher-block">MATCH (c:Contributor)
+OPTIONAL MATCH (c)-[:CONTRIBUTED_TO]->(p:Project)
+OPTIONAL MATCH (c)-[:WORKS_AT]->(o:Organization)
+OPTIONAL MATCH (c)-[:CONTRIBUTED_TO]->(p2:Project)<-[:CONTRIBUTED_TO]-(co:Contributor) WHERE c <> co
+WITH c, count(DISTINCT p) AS pc, count(DISTINCT o) AS oc, count(DISTINCT co) AS coc
+RETURN c.name, (pc * 15) + (oc * 25) + (coc * 5) + (coalesce(c.followers, 0) / 100.0) AS influenceScore
+ORDER BY influenceScore DESC LIMIT 20</pre>
+              <div id="q3-results" class="query-results-area"></div>
+            </div>
+            
+            <div class="query-panel" id="q4-card" style="display:none">
+              <div class="query-panel-header">
+                <h2>Transitive Dependency Chain</h2>
+                <div class="query-actions">
+                  <select class="select-input" id="q4-project-select"></select>
+                  <button class="btn btn-primary" id="q4-run">Run Query</button>
+                </div>
+              </div>
+              <pre class="cypher-block">MATCH path = (start:Project {id: $id})-[:DEPENDS_ON*1..5]->(dep:Project)
+RETURN dep, length(path) AS depth, [n IN nodes(path) | n.name] AS chain</pre>
+              <div id="q4-results" class="query-results-area"></div>
+            </div>
+
+            <div class="query-panel" id="q5-card" style="display:none">
+              <div class="query-panel-header">
+                <h2>Shortest Collaboration Path</h2>
+                <div class="query-actions">
+                  <select class="select-input" id="q5-from"></select>
+                  <select class="select-input" id="q5-to"></select>
+                  <button class="btn btn-primary" id="q5-run">Find Path</button>
+                </div>
+              </div>
+              <pre class="cypher-block">MATCH (start:Contributor {id: $from}), (end:Contributor {id: $to})
+MATCH path = shortestPath((start)-[:CONTRIBUTED_TO|FOLLOWS*..6]-(end))
+RETURN path</pre>
+              <div id="q5-results" class="query-results-area"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ACCESS CONTROL PAGE ══════════════════════════════════════════════ -->
+      <div class="page" id="page-auth">
+        <div class="page-header">
+          <h1 class="page-title">Graph-Based Access Control (ReBAC)</h1>
+          <p style="color: var(--text-secondary); margin-top: 8px; font-size: 0.85rem;">
+            Evaluate dynamic authorization based on live enterprise graph context.
+          </p>
+        </div>
+        
+        <div class="panel" style="max-width: 800px;">
+          <div class="panel-header">
+            <h2 class="panel-title">Policy Evaluator</h2>
+          </div>
+          <div class="panel-body" style="padding: 24px;">
+            <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px;">
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">User (Identity)</label>
+                <select class="select-input" id="auth-user-select" style="width: 100%;"></select>
+              </div>
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Target (Data Asset)</label>
+                <select class="select-input" id="auth-asset-select" style="width: 100%;"></select>
+              </div>
+              <button class="btn btn-primary" id="auth-evaluate-btn" style="height: 38px; padding: 0 24px;">Evaluate Access</button>
+            </div>
+            
+            <div id="auth-result-area" style="display: none; padding: 24px; border-radius: 12px; border: 1px solid var(--border); background: #000;">
+              <div id="auth-status-banner" style="margin-bottom: 24px; padding: 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 12px;">
+                <!-- Status icon and text injected here -->
+              </div>
+              
+              <div id="auth-path-container" style="display: none;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Authorized Graph Path</p>
+                <div id="auth-path-visual" style="display: flex; align-items: center; gap: 12px; overflow-x: auto; padding-bottom: 8px;">
+                  <!-- Path nodes and relationships injected here -->
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/graph.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
