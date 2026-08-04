@@ -11,8 +11,6 @@
 
 🔗 **[https://techpulse-wexa.vercel.app](https://techpulse-wexa.vercel.app)** *(deploy in progress — see setup below to run locally)*
 
-📹 **[Screen recording](./docs/demo.webm)**
-
 ---
 
 ## Why a graph database?
