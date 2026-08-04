@@ -7,12 +7,6 @@
 
 ---
 
-## Live Demo
-
-🔗 **[https://techpulse-wexa.vercel.app](https://techpulse-wexa.vercel.app)** *(deploy in progress — see setup below to run locally)*
-
----
-
 ## Why a graph database?
 
 This use case is defined by relationships, not rows. Here's why a graph database earns its place over a relational schema:
