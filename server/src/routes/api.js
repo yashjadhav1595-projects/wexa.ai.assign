@@ -8,6 +8,40 @@ const projectService = require('../services/projectService');
 const organizationService = require('../services/organizationService');
 const graphService = require('../services/graphService');
 const authService = require('../services/authService');
+const agentService = require('../services/agentService');
+const auditService = require('../services/auditService');
+const { ingestGraph } = require('../../seed/githubIngest');
+
+// --- AI Agent OS ---
+router.post('/agent/query', asyncHandler(async (req, res) => {
+  const { userId, query } = req.body;
+  if (!userId) return res.status(400).json({ error: true, message: 'userId is required for ReBAC verification.' });
+  const context = await agentService.getSecureContext(userId, query);
+  if (context.status === 'denied') return res.status(403).json(context);
+  res.json(context);
+}));
+
+// --- Admin ---
+router.get('/admin/audit', asyncHandler(async (req, res) => {
+  const logs = await auditService.getRecentLogs(50);
+  res.json(logs);
+}));
+
+// --- Admin Sync ---
+router.post('/admin/sync', asyncHandler(async (req, res) => {
+  const { organization } = req.body;
+  if (!organization) return res.status(400).json({ error: true, message: 'Organization name is required.' });
+  
+  try {
+    const stats = await ingestGraph([organization.toLowerCase()]);
+    res.json({ success: true, stats, message: `Successfully synced data for ${organization}.` });
+  } catch (err) {
+    if (err.message.includes('rate limit')) {
+      return res.status(429).json({ error: true, message: 'GitHub API rate limit exceeded. Please try again later.' });
+    }
+    throw err;
+  }
+}));
 
 // --- Contributors ---
 router.get('/contributors', asyncHandler(async (req, res) => {

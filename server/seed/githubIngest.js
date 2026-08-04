@@ -21,8 +21,7 @@ if (!URI || !PASSWORD) {
 
 const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));
 
-// Target high-profile organizations
-const TARGET_ORGS = ['vercel', 'facebook', 'hashicorp'];
+// No default targets needed, passed dynamically
 
 // Helper to make HTTPS requests to GitHub API
 function fetchGitHub(endpoint) {
@@ -86,11 +85,10 @@ const syntheticAssets = {
 
 const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#22c55e', '#a855f7', '#ef4444', '#0ea5e9'];
 
-async function ingestGraph() {
+async function ingestGraph(orgNames) {
   const session = driver.session({ database: 'neo4j' });
   
   try {
-    await clearDatabase(session);
     await createConstraints(session);
     
     console.log('[Ingest] Fetching real data from GitHub...');
@@ -98,13 +96,14 @@ async function ingestGraph() {
     let totalNodes = 0;
     let totalRels = 0;
 
-    for (const orgName of TARGET_ORGS) {
+    for (const orgName of orgNames) {
       console.log(`\n> Processing Organization: ${orgName}`);
       
       // 1. Fetch Org
       const orgData = await fetchGitHub(`/orgs/${orgName}`);
       await session.run(
-        `CREATE (o:Organization {id: $id, name: $name, type: 'Corporation', country: $location, description: $description, avatarUrl: $avatar})`,
+        `MERGE (o:Organization {id: $id})
+         ON CREATE SET o.name = $name, o.type = 'Corporation', o.country = $location, o.description = $description, o.avatarUrl = $avatar`,
         { 
           id: `org-${orgData.id}`, 
           name: orgData.name || orgData.login, 
@@ -116,11 +115,12 @@ async function ingestGraph() {
       totalNodes++;
       
       // Seed synthetic data asset for ReBAC
-      const asset = syntheticAssets[orgName];
+      const asset = syntheticAssets[orgName] || { id: `da-${orgName}-1`, name: `${orgName} Internal Data`, classification: 'Restricted', sensitivity: 'High' };
       await session.run(
         `MATCH (o:Organization {id: $orgId})
-         CREATE (d:DataAsset {id: $id, name: $name, classification: $classification, sensitivity: $sensitivity})
-         CREATE (o)-[:OWNS_ASSET]->(d)`,
+         MERGE (d:DataAsset {id: $id})
+         ON CREATE SET d.name = $name, d.classification = $classification, d.sensitivity = $sensitivity
+         MERGE (o)-[:OWNS_ASSET]->(d)`,
         { orgId: `org-${orgData.id}`, ...asset }
       );
       totalNodes++; totalRels++;
@@ -133,11 +133,12 @@ async function ingestGraph() {
         
         await session.run(
           `MATCH (o:Organization {id: $orgId})
-           CREATE (p:Project {id: $id, name: $name, description: $description, stars: $stars, forks: $forks, language: $language})
-           CREATE (p)-[:PART_OF]->(o)
+           MERGE (p:Project {id: $id})
+           ON CREATE SET p.name = $name, p.description = $description, p.stars = $stars, p.forks = $forks, p.language = $language
+           MERGE (p)-[:PART_OF]->(o)
            WITH p
            MATCH (d:DataAsset {id: $assetId})
-           CREATE (p)-[:HAS_ACCESS_TO]->(d)`,
+           MERGE (p)-[:HAS_ACCESS_TO]->(d)`,
           {
             orgId: `org-${orgData.id}`,
             assetId: asset.id,
@@ -161,7 +162,7 @@ async function ingestGraph() {
              ON CREATE SET c.username = $username, c.name = $username, c.avatarUrl = $avatar, c.followers = 0, c.avatarColor = $color
              WITH c
              MATCH (p:Project {id: $projectId})
-             CREATE (c)-[:CONTRIBUTED_TO {commits: $commits, role: 'Maintainer'}]->(p)
+             MERGE (c)-[:CONTRIBUTED_TO {commits: $commits, role: 'Maintainer'}]->(p)
              WITH c
              MATCH (o:Organization {id: $orgId})
              MERGE (c)-[:WORKS_AT {role: 'Open Source Contributor'}]->(o)`,
@@ -184,16 +185,22 @@ async function ingestGraph() {
     console.log(`\n[Ingest] ✅ Live GitHub Data Ingestion Complete!`);
     console.log(`[Ingest] Estimated Graph Size: ~${totalNodes} Nodes, ~${totalRels} Relationships generated.`);
     
+    return { nodes: totalNodes, rels: totalRels };
   } catch (err) {
     console.error('\n[Ingest] FATAL ERROR:', err.message);
     if (err.message.includes('403') || err.message.includes('rate limit')) {
       console.log('💡 TIP: You hit the GitHub API unauthenticated rate limit (60 req/hr).');
-      console.log('Provide a GITHUB_TOKEN in your .env file to boost the limit to 5000/hr.');
+      throw new Error('GitHub API rate limit exceeded. Please wait or add a GITHUB_TOKEN.');
     }
+    throw err;
   } finally {
     await session.close();
-    await driver.close();
   }
 }
 
-ingestGraph();
+// Support CLI execution or module import
+if (require.main === module) {
+  ingestGraph(['vercel', 'facebook', 'hashicorp']).then(() => driver.close());
+} else {
+  module.exports = { ingestGraph };
+}

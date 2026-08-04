@@ -1,385 +1,349 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TechPulse</title>
-  <link rel="stylesheet" href="/css/styles.css" />
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GraphGuard AI | Secure Context Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #000000;
+      --zinc-950:#09090b;
+      --zinc-900:#18181b;
+      --zinc-800:#27272a;
+      --zinc-500:#71717a;
+      --zinc-400:#a1a1aa;
+      --zinc-200:#e4e4e7;
+      --white:   #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--black);
+      color: var(--white);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--zinc-800); color: var(--white); }
+
+    /* ── Nav ─────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 72px;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--zinc-900);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.95rem; font-weight: 500; color: var(--white);
+      text-decoration: none; letter-spacing: -0.3px;
+    }
+    .nav-links {
+      display: flex; gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.85rem; color: var(--zinc-400);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .btn-nav {
+      padding: 9px 18px;
+      background: var(--white); color: var(--black);
+      font-size: 0.85rem; font-weight: 500; font-family: inherit;
+      border: none; border-radius: 8px; cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-nav:hover { background: var(--zinc-200); }
+
+    /* ── Layout ──────────────────────────────────────── */
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Hero ────────────────────────────────────────── */
+    .hero {
+      padding: 180px 0 100px;
+      min-height: 90vh;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    h1 {
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      font-weight: 400; letter-spacing: -2px; line-height: 1.1;
+      margin-bottom: 28px; color: var(--white);
+    }
+    .hero-desc {
+      font-size: 1.15rem; color: var(--zinc-400);
+      max-width: 580px; margin-bottom: 44px; font-weight: 300; line-height: 1.7;
+    }
+    .hero-btns { display: flex; gap: 14px; }
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 24px;
+      background: var(--white); color: var(--black);
+      font-size: 0.875rem; font-weight: 500; font-family: inherit;
+      border: none; border-radius: 8px; cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--zinc-200); }
+    .btn-outline {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 24px;
+      background: transparent; color: var(--white);
+      font-size: 0.875rem; font-weight: 500; font-family: inherit;
+      border: 1px solid var(--zinc-800); border-radius: 8px; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-outline:hover { background: var(--zinc-900); border-color: var(--zinc-700); }
+
+    /* ── Terminal ─────────────────────────────────────── */
+    .terminal {
+      margin-top: 72px;
+      padding: 28px 32px;
+      background: var(--zinc-950);
+      border: 1px solid var(--zinc-900);
+      border-radius: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      color: var(--zinc-400);
+      line-height: 1.8;
+    }
+    .terminal .hl { color: var(--white); }
+    .terminal .dim { color: var(--zinc-500); }
+
+    /* ── Sections ─────────────────────────────────────── */
+    section { padding: 120px 0; }
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; color: var(--zinc-500);
+      text-transform: uppercase; letter-spacing: 0.15em;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3vw, 2.2rem);
+      font-weight: 400; letter-spacing: -1px; margin-bottom: 14px;
+    }
+    .section-desc {
+      font-size: 1rem; color: var(--zinc-400); font-weight: 300;
+      max-width: 560px; line-height: 1.7; margin-bottom: 56px;
+    }
+
+    /* ── Workflow Steps ────────────────────────────────── */
+    .workflow { display: flex; flex-direction: column; gap: 16px; }
+    .flow-step {
+      display: flex; align-items: flex-start; gap: 32px;
+      padding: 28px 32px;
+      background: var(--zinc-950);
+      border: 1px solid var(--zinc-900);
+      border-radius: 16px;
+      transition: border-color 0.2s;
+    }
+    .flow-step:hover { border-color: var(--zinc-800); }
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; color: var(--zinc-500);
+      min-width: 28px; padding-top: 4px;
+    }
+    .step-content h3 {
+      font-size: 1.05rem; font-weight: 500; margin-bottom: 8px;
+    }
+    .step-content p {
+      font-size: 0.9rem; color: var(--zinc-400); font-weight: 300; line-height: 1.7;
+    }
+
+    /* ── Features Grid ─────────────────────────────────── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0;
+    }
+    .feature-card {
+      padding: 32px 0;
+      border-top: 1px solid var(--zinc-900);
+    }
+    .feature-card h3 {
+      font-size: 1rem; font-weight: 500; margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 0.875rem; color: var(--zinc-400); font-weight: 300; line-height: 1.7;
+    }
+
+    /* ── Pricing ───────────────────────────────────────── */
+    .pricing-box {
+      padding: 48px;
+      background: var(--zinc-950);
+      border: 1px solid var(--zinc-900);
+      border-radius: 16px;
+      max-width: 420px;
+    }
+    .pricing-box h3 { font-size: 0.875rem; font-weight: 500; color: var(--zinc-400); }
+    .price-num {
+      font-size: 5rem; font-weight: 300; letter-spacing: -3px;
+      line-height: 1; margin: 20px 0 6px;
+    }
+    .price-label { font-size: 0.8rem; color: var(--zinc-500); margin-bottom: 36px; }
+    .pricing-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 40px; }
+    .pricing-list li {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.875rem; color: var(--zinc-400);
+    }
+    .pricing-list li::before {
+      content: '✓'; color: var(--zinc-500); font-size: 0.75rem; flex-shrink: 0;
+    }
+    .btn-full {
+      display: flex; align-items: center; justify-content: center; width: 100%;
+      padding: 14px;
+      background: var(--white); color: var(--black);
+      font-size: 0.875rem; font-weight: 500; font-family: inherit;
+      border: none; border-radius: 8px; cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-full:hover { background: var(--zinc-200); }
+
+    /* ── Footer ────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--zinc-900);
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--zinc-500);
+      font-size: 0.8rem;
+    }
+    .footer-logo {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-bottom: 12px; color: var(--white); font-weight: 500;
+    }
+  </style>
 </head>
 <body>
 
-<div class="app-layout">
-  
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-        <span>TechPulse</span>
-      </div>
-      <div class="workspace-switcher">
-        <span>my-knowledge-graph</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 10 12 14 16 10"></polyline></svg>
-      </div>
-    </div>
+  <nav>
+    <a href="/" class="nav-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      GraphGuard AI
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how-it-works">Architecture</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <a href="/dashboard" class="btn-nav">Dashboard</a>
+  </nav>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section">
-        <div class="nav-section-title">Overview</div>
-        <button class="nav-item active" data-page="home">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          Dashboard
-        </button>
-        <button class="nav-item" data-page="graph">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-          Graph Explorer
-        </button>
-        <button class="nav-item" data-page="queries">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Run Queries
-        </button>
+  <div class="container">
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>The Secure Context<br>Engine for AI.</h1>
+      <p class="hero-desc">Vector databases lack structural access control. We intercept agent queries, mathematically prove user permissions via Neo4j ReBAC, and deliver secure context to your LLM.</p>
+      <div class="hero-btns">
+        <a href="/dashboard" class="btn-primary">Deploy Gateway</a>
+        <a href="#how-it-works" class="btn-outline">How it works</a>
       </div>
-      
-      <div class="nav-section">
-        <div class="nav-section-title">Database</div>
-        <button class="nav-item" data-page="contributors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          Contributors
-        </button>
-        <button class="nav-item" data-page="projects">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-          Projects
-        </button>
-        <button class="nav-item" data-page="organizations">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-          Organizations
-        </button>
-      <div class="nav-section">
-        <div class="nav-section-title">Governance</div>
-        <button class="nav-item" data-page="auth">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          Access Control (ReBAC)
-        </button>
-      </div>
-    </nav>
-    
-    <div class="sidebar-footer">
-      <div class="db-status" id="db-status">
-        <div class="db-dot pulse" id="db-dot"></div>
-        <span id="db-label">Connecting...</span>
+
+      <div class="terminal">
+        <div>➜ curl -X POST https://api.graphguard.ai/v1/context \</div>
+        <div style="margin-left:20px;margin-bottom:16px;">-d '{"agent": "sales-bot", "query": "Q3 Revenue"}'</div>
+        <div><span class="hl">[GraphGuard]</span> Resolving clearance for agent: sales-bot</div>
+        <div><span class="hl">[GraphGuard]</span> Graph ReBAC traversal complete (4ms).</div>
+        <div class="dim">[Security] 2 Data Assets blocked (Missing clearance).</div>
+        <div><span class="hl">[Gateway]</span> Secure Context Packet forwarded to LLM.</div>
       </div>
     </div>
-  </aside>
 
-  <!-- Main Content Area -->
-  <main class="main-content">
-    
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="breadcrumb" id="topbar-breadcrumb">
-        Dashboard
-      </div>
-      <div class="topbar-actions">
-        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
-        <div class="avatar-sm">Y</div>
-      </div>
-    </header>
+    <!-- How it works -->
+    <section id="how-it-works">
+      <div class="eyebrow">Architecture</div>
+      <h2 class="section-title">How it works</h2>
+      <p class="section-desc">A deterministic, mathematically proven workflow ensuring your enterprise AI never sees data it shouldn't.</p>
 
-    <div class="scroll-area">
-      <!-- ═══ HOME PAGE ══════════════════════════════════════════════════════ -->
-      <div class="page active" id="page-home">
-        <div class="page-header">
-          <h1 class="page-title">Overview</h1>
-        </div>
-        
-        <div class="metrics-row" id="home-stats">
-          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
-          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
-          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
-          <div class="metric-card skeleton"><div class="skeleton-text"></div></div>
-        </div>
-
-        <div class="dashboard-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <h2 class="panel-title">Top Contributors</h2>
-              <button class="btn-text btn-sm" data-page="contributors">View all</button>
-            </div>
-            <div class="panel-body" id="home-contributors">
-              <div class="skeleton skeleton-row"></div>
-              <div class="skeleton skeleton-row"></div>
-              <div class="skeleton skeleton-row"></div>
-            </div>
+      <div class="workflow">
+        <div class="flow-step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Frontend Interception</h3>
+            <p>The user issues a prompt to the AI agent via your frontend interface. Instead of routing directly to a vector database, the request is intercepted by the GraphGuard API Gateway, appending the user's identity token.</p>
           </div>
-          
-          <div class="panel">
-            <div class="panel-header">
-              <h2 class="panel-title">Active Projects</h2>
-              <button class="btn-text btn-sm" data-page="projects">View all</button>
-            </div>
-            <div class="panel-body" id="home-projects">
-              <div class="skeleton skeleton-row"></div>
-              <div class="skeleton skeleton-row"></div>
-              <div class="skeleton skeleton-row"></div>
-            </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Backend Traversal (Neo4j ReBAC)</h3>
+            <p>The Node.js backend receives the query and executes a highly optimized Cypher traversal against your Neo4j graph. It mathematically calculates the relationship paths between the User Node and all relevant Data Nodes.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Context Pruning &amp; Audit</h3>
+            <p>Any data node without a direct, authorized relationship path to the user is aggressively pruned from the context payload. The entire access decision is cryptographically recorded as an immutable Audit Log.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>LLM Generation</h3>
+            <p>The pruned, verified, and secure Context Packet is forwarded to the LLM (OpenAI, Anthropic). The AI generates an answer strictly grounded in data the user is mathematically proven to have access to.</p>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- ═══ GRAPH PAGE ══════════════════════════════════════════════════════ -->
-      <div class="page" id="page-graph">
-        <div class="graph-layout">
-          <div class="graph-header">
-            <div class="graph-controls" id="graph-filter-controls">
-              <button class="filter-btn active" data-type="all">All Types</button>
-              <button class="filter-btn" data-type="Contributor">Contributors</button>
-              <button class="filter-btn" data-type="Project">Projects</button>
-              <button class="filter-btn" data-type="Organization">Organizations</button>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="graph-reset">Reset View</button>
-          </div>
-          <div id="graph-container">
-            <div id="graph-loading" class="empty-state">Loading graph data...</div>
-            <div id="graph-tooltip"></div>
-          </div>
+    <!-- Features -->
+    <section id="features">
+      <div class="eyebrow">Capabilities</div>
+      <h2 class="section-title">Features</h2>
+      <div class="features-grid">
+        <div class="feature-card" style="padding-right:40px;">
+          <h3>Relationship-Based Access</h3>
+          <p>Evaluate multi-hop permission paths in milliseconds. If there's no mathematical path, there's no access.</p>
+        </div>
+        <div class="feature-card" style="padding-right:40px;">
+          <h3>Zero Hallucinations</h3>
+          <p>Agents understand the structural 'how' and 'why' of your data, eliminating contextual hallucinations common in flat vector stores.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Immutable Audit</h3>
+          <p>Prove to compliance exactly what data your AI agents saw, and exactly why they were allowed to see it.</p>
         </div>
       </div>
+    </section>
 
-      <!-- ═══ CONTRIBUTORS PAGE ═══════════════════════════════════════════════ -->
-      <div class="page" id="page-contributors">
-        <div id="contributors-list-view">
-          <div class="page-header">
-            <h1 class="page-title">Contributors</h1>
-          </div>
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Influence Score</th>
-                  <th>Followers</th>
-                  <th>Projects</th>
-                  <th>Organization</th>
-                </tr>
-              </thead>
-              <tbody id="contributors-table-body">
-                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
-                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="contributors-detail-view" style="display:none">
-          <button class="btn-back" id="contributors-back">← Back to Contributors</button>
-          <div class="detail-layout" id="contributor-detail-panel">
-            <div class="detail-sidebar" id="contributor-sidebar"></div>
-            <div class="detail-main" id="contributor-main"></div>
-          </div>
-        </div>
+    <!-- Pricing -->
+    <section id="pricing">
+      <div class="eyebrow">Pricing</div>
+      <h2 class="section-title">Usage-based.</h2>
+      <p class="section-desc">Pay only for secured context. No subscriptions, no hidden fees.</p>
+      <div class="pricing-box">
+        <h3>API Gateway</h3>
+        <div class="price-num">$0.01</div>
+        <p class="price-label">per successful Context Packet</p>
+        <ul class="pricing-list">
+          <li>Unlimited Graph Nodes</li>
+          <li>Sub-10ms ReBAC queries</li>
+          <li>90-day Immutable Audit Logs</li>
+          <li>Native OpenAI / Anthropic integrations</li>
+        </ul>
+        <a href="/dashboard" class="btn-full">Start Building</a>
       </div>
+    </section>
 
-      <!-- ═══ PROJECTS PAGE ═══════════════════════════════════════════════════ -->
-      <div class="page" id="page-projects">
-        <div id="projects-list-view">
-          <div class="page-header">
-            <h1 class="page-title">Projects</h1>
-          </div>
-          <div class="data-table-wrapper">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Stars</th>
-                  <th>Language</th>
-                  <th>Forks</th>
-                </tr>
-              </thead>
-              <tbody id="projects-table-body">
-                <tr><td colspan="4" class="skeleton skeleton-row"></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+  </div>
 
-        <div id="projects-detail-view" style="display:none">
-          <button class="btn-back" id="projects-back">← Back to Projects</button>
-          <div class="detail-layout" id="project-detail-panel">
-            <div class="detail-sidebar" id="project-sidebar"></div>
-            <div class="detail-main" id="project-main"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ ORGANIZATIONS PAGE ══════════════════════════════════════════════ -->
-      <div class="page" id="page-organizations">
-        <div class="page-header">
-          <h1 class="page-title">Organizations</h1>
-        </div>
-        <div class="data-table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Organization</th>
-                <th>Type</th>
-                <th>Country</th>
-              </tr>
-            </thead>
-            <tbody id="orgs-table-body">
-              <tr><td colspan="3" class="skeleton skeleton-row"></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ═══ QUERIES PAGE ════════════════════════════════════════════════════ -->
-      <div class="page" id="page-queries">
-        <div class="page-header">
-          <h1 class="page-title">Graph Queries</h1>
-        </div>
-        
-        <div class="queries-grid">
-          <!-- Left Sidebar for Query List -->
-          <div class="query-list">
-            <button class="query-nav-btn active" data-q="1">1. Collaboration Network</button>
-            <button class="query-nav-btn" data-q="2">2. Supply-Chain Risk</button>
-            <button class="query-nav-btn" data-q="3">3. Graph Data Science: Influence</button>
-            <button class="query-nav-btn" data-q="4">4. Transitive Dependencies</button>
-            <button class="query-nav-btn" data-q="5">5. Shortest Path</button>
-          </div>
-          
-          <!-- Right Content Area -->
-          <div class="query-content">
-            
-            <div class="query-panel" id="q1-card" style="display:block">
-              <div class="query-panel-header">
-                <h2>Collaboration Network (2-hop)</h2>
-                <div class="query-actions">
-                  <select class="select-input" id="q1-contributor-select"></select>
-                  <button class="btn btn-primary" id="q1-run">Run Query</button>
-                </div>
-              </div>
-              <pre class="cypher-block">MATCH path = (start:Contributor {id: $id})-[:CONTRIBUTED_TO*1..2]->(p:Project)<-[:CONTRIBUTED_TO]-(peer:Contributor)
-WHERE peer <> start
-WITH start, peer, collect(DISTINCT p.name) AS sharedProjects, length(path) AS hops
-RETURN peer, sharedProjects, min(hops) AS minHops</pre>
-              <div id="q1-results" class="query-results-area"></div>
-            </div>
-
-            <div class="query-panel" id="q2-card" style="display:none">
-              <div class="query-panel-header">
-                <h2>Supply-Chain Risk</h2>
-                <div class="query-actions">
-                  <button class="btn btn-primary" id="q2-run">Run Query</button>
-                </div>
-              </div>
-              <pre class="cypher-block">MATCH (orgA:Organization)<-[:PART_OF]-(projA:Project)-[:DEPENDS_ON]->(projB:Project)-[:PART_OF]->(orgB:Organization)
-WHERE orgA <> orgB
-MATCH (c:Contributor)-[:CONTRIBUTED_TO]->(projA)
-MATCH (c)-[:CONTRIBUTED_TO]->(projB)
-RETURN orgA.name, projA.name, projB.name, orgB.name, c.name</pre>
-              <div id="q2-results" class="query-results-area"></div>
-            </div>
-
-            <div class="query-panel" id="q3-card" style="display:none">
-              <div class="query-panel-header">
-                <h2>Graph Data Science: Influence Ranking</h2>
-                <div class="query-actions">
-                  <button class="btn btn-primary" id="q3-run">Run Algorithm</button>
-                </div>
-              </div>
-              <pre class="cypher-block">MATCH (c:Contributor)
-OPTIONAL MATCH (c)-[:CONTRIBUTED_TO]->(p:Project)
-OPTIONAL MATCH (c)-[:WORKS_AT]->(o:Organization)
-OPTIONAL MATCH (c)-[:CONTRIBUTED_TO]->(p2:Project)<-[:CONTRIBUTED_TO]-(co:Contributor) WHERE c <> co
-WITH c, count(DISTINCT p) AS pc, count(DISTINCT o) AS oc, count(DISTINCT co) AS coc
-RETURN c.name, (pc * 15) + (oc * 25) + (coc * 5) + (coalesce(c.followers, 0) / 100.0) AS influenceScore
-ORDER BY influenceScore DESC LIMIT 20</pre>
-              <div id="q3-results" class="query-results-area"></div>
-            </div>
-            
-            <div class="query-panel" id="q4-card" style="display:none">
-              <div class="query-panel-header">
-                <h2>Transitive Dependency Chain</h2>
-                <div class="query-actions">
-                  <select class="select-input" id="q4-project-select"></select>
-                  <button class="btn btn-primary" id="q4-run">Run Query</button>
-                </div>
-              </div>
-              <pre class="cypher-block">MATCH path = (start:Project {id: $id})-[:DEPENDS_ON*1..5]->(dep:Project)
-RETURN dep, length(path) AS depth, [n IN nodes(path) | n.name] AS chain</pre>
-              <div id="q4-results" class="query-results-area"></div>
-            </div>
-
-            <div class="query-panel" id="q5-card" style="display:none">
-              <div class="query-panel-header">
-                <h2>Shortest Collaboration Path</h2>
-                <div class="query-actions">
-                  <select class="select-input" id="q5-from"></select>
-                  <select class="select-input" id="q5-to"></select>
-                  <button class="btn btn-primary" id="q5-run">Find Path</button>
-                </div>
-              </div>
-              <pre class="cypher-block">MATCH (start:Contributor {id: $from}), (end:Contributor {id: $to})
-MATCH path = shortestPath((start)-[:CONTRIBUTED_TO|FOLLOWS*..6]-(end))
-RETURN path</pre>
-              <div id="q5-results" class="query-results-area"></div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ ACCESS CONTROL PAGE ══════════════════════════════════════════════ -->
-      <div class="page" id="page-auth">
-        <div class="page-header">
-          <h1 class="page-title">Graph-Based Access Control (ReBAC)</h1>
-          <p style="color: var(--text-secondary); margin-top: 8px; font-size: 0.85rem;">
-            Evaluate dynamic authorization based on live enterprise graph context.
-          </p>
-        </div>
-        
-        <div class="panel" style="max-width: 800px;">
-          <div class="panel-header">
-            <h2 class="panel-title">Policy Evaluator</h2>
-          </div>
-          <div class="panel-body" style="padding: 24px;">
-            <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 24px;">
-              <div style="flex: 1;">
-                <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">User (Identity)</label>
-                <select class="select-input" id="auth-user-select" style="width: 100%;"></select>
-              </div>
-              <div style="flex: 1;">
-                <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Target (Data Asset)</label>
-                <select class="select-input" id="auth-asset-select" style="width: 100%;"></select>
-              </div>
-              <button class="btn btn-primary" id="auth-evaluate-btn" style="height: 38px; padding: 0 24px;">Evaluate Access</button>
-            </div>
-            
-            <div id="auth-result-area" style="display: none; padding: 24px; border-radius: 12px; border: 1px solid var(--border); background: #000;">
-              <div id="auth-status-banner" style="margin-bottom: 24px; padding: 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 12px;">
-                <!-- Status icon and text injected here -->
-              </div>
-              
-              <div id="auth-path-container" style="display: none;">
-                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Authorized Graph Path</p>
-                <div id="auth-path-visual" style="display: flex; align-items: center; gap: 12px; overflow-x: auto; padding-bottom: 8px;">
-                  <!-- Path nodes and relationships injected here -->
-                </div>
-              </div>
-            </div>
-            
-          </div>
-        </div>
-      </div>
-
+  <footer>
+    <div class="footer-logo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      GraphGuard AI
     </div>
-  </main>
-</div>
+    <p>&copy; 2026 GraphGuard AI. Minimalist Enterprise Security.</p>
+  </footer>
 
-<script src="/js/api.js"></script>
-<script src="/js/graph.js"></script>
-<script src="/js/app.js"></script>
 </body>
 </html>

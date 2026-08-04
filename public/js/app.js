@@ -18,7 +18,8 @@ const pageTitles = {
   contributors: 'Contributors',
   projects: 'Projects',
   organizations: 'Organizations',
-  auth: 'Graph-Based Access Control'
+  auth: 'Graph-Based Access Control',
+  audit: 'Security Audit Logs'
 };
 
 function navigate(page) {
@@ -40,6 +41,7 @@ function navigate(page) {
   if (page === 'organizations') loadOrganizations();
   if (page === 'queries')       loadQueries();
   if (page === 'auth')          loadAuth();
+  if (page === 'audit')         loadAudit();
 
   document.querySelector('.scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -47,6 +49,51 @@ function navigate(page) {
 document.querySelectorAll('[data-page]').forEach(el => {
   el.addEventListener('click', (e) => navigate(e.currentTarget.dataset.page));
 });
+
+document.getElementById('btn-sync-org')?.addEventListener('click', handleSyncData);
+
+async function handleSyncData() {
+  const input = document.getElementById('sync-org-input');
+  const btn = document.getElementById('btn-sync-org');
+  const status = document.getElementById('sync-status');
+  const org = input.value.trim();
+  
+  if (!org) return;
+  
+  input.disabled = true;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;"></span> Syncing...`;
+  status.style.display = 'block';
+  status.style.color = 'var(--text-muted)';
+  status.innerHTML = `Connecting to GitHub API to fetch repositories and maintainers for <b>${org}</b>. This usually takes 5-10 seconds...`;
+
+  try {
+    const res = await fetch('/api/admin/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organization: org })
+    });
+    const data = await res.json();
+    
+    if (!res.ok || data.error) {
+      throw new Error(data.message || 'Failed to sync data');
+    }
+    
+    status.style.color = 'var(--success)';
+    status.innerHTML = `✅ Successfully synced ${data.stats.nodes} nodes and ${data.stats.rels} relationships from GitHub!`;
+    input.value = '';
+    
+    // Refresh stats
+    loadHome(true);
+  } catch (err) {
+    status.style.color = 'var(--danger)';
+    status.innerHTML = `❌ Error: ${err.message}`;
+  } finally {
+    input.disabled = false;
+    btn.disabled = false;
+    btn.innerHTML = `Fetch & Sync Live Data`;
+  }
+}
 
 // ─── DB Status ────────────────────────────────────────────────────────────────
 async function checkDBStatus() {
@@ -75,7 +122,13 @@ function badgeHtml(text, type = '') {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-async function loadHome() {
+async function loadHome(force = false) {
+  if (force) {
+    state.contributors = null;
+    state.projects = null;
+    state.organizations = null;
+    state.graphLoaded = false;
+  }
   try {
     const stats = await API.graphStats();
     document.getElementById('home-stats').innerHTML = `
@@ -87,7 +140,6 @@ async function loadHome() {
   } catch (err) {
     document.getElementById('home-stats').innerHTML = errorHtml(err.message);
   }
-
   if (!state.contributors) { try { state.contributors = await API.contributors(); } catch { state.contributors = []; } }
   const topC = state.contributors.slice(0, 5);
   document.getElementById('home-contributors').innerHTML = topC.length
@@ -279,13 +331,119 @@ async function loadOrganizations() {
   if (!tb) return;
   tb.innerHTML = state.organizations.length
     ? state.organizations.map(o => `
-      <tr>
-        <td><strong>${o.name}</strong></td>
+      <tr onclick="openOrganization('${o.id}')" style="cursor:pointer">
+        <td><strong style="color:var(--white)">${o.name}</strong></td>
         <td>${badgeHtml(o.type)}</td>
-        <td>${o.country}</td>
+        <td style="color:var(--zinc-400)">${o.country || '—'}</td>
+        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--zinc-300)">${o.employeeCount || 0}</span></td>
+        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--zinc-300)">${o.ownedCount || 0}</span></td>
       </tr>`).join('')
-    : `<tr><td colspan="3">${emptyHtml()}</td></tr>`;
+    : `<tr><td colspan="5">${emptyHtml()}</td></tr>`;
 }
+
+async function openOrganization(id) {
+  navigate('organizations');
+  document.getElementById('orgs-list-view').style.display = 'none';
+  document.getElementById('orgs-detail-view').style.display = 'block';
+
+  // Reset to loading state
+  document.getElementById('org-header-card').innerHTML = '<div class="skeleton" style="height:80px;width:100%;border-radius:8px;"></div>';
+  document.getElementById('org-projects-panel').innerHTML = '<div class="skeleton" style="height:200px;border-radius:16px;"></div>';
+  document.getElementById('org-employees-panel').innerHTML = '<div class="skeleton" style="height:200px;border-radius:16px;"></div>';
+  document.getElementById('org-sponsoring-panel').innerHTML = '<div class="skeleton" style="height:80px;border-radius:16px;"></div>';
+
+  try {
+    const o = await API.organization(id);
+
+    // ── Header Card ──
+    document.getElementById('org-header-card').innerHTML = `
+      <div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+          <div style="width:48px;height:48px;border-radius:12px;background:var(--zinc-800);border:1px solid var(--zinc-700);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:var(--white);flex-shrink:0;">${(o.name||'?').substring(0,2).toUpperCase()}</div>
+          <div>
+            <div style="font-size:1.2rem;font-weight:600;color:var(--white);letter-spacing:-0.3px">${o.name}</div>
+            <div style="font-size:0.8rem;color:var(--zinc-500);font-family:'JetBrains Mono',monospace;margin-top:2px">${o.country || ''}</div>
+          </div>
+        </div>
+        ${o.description ? `<p style="font-size:0.875rem;color:var(--zinc-400);line-height:1.6;max-width:560px">${o.description}</p>` : ''}
+      </div>
+      <div style="display:flex;gap:24px;flex-shrink:0">
+        <div style="text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--zinc-500);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Type</div>
+          ${badgeHtml(o.type || 'Organization')}
+        </div>
+        ${o.founded ? `<div style="text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--zinc-500);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Founded</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--white)">${o.founded}</div>
+        </div>` : ''}
+        <div style="text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--zinc-500);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Contributors</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--white)">${o.employees?.length || 0}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--zinc-500);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Projects</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--white)">${o.ownedProjects?.length || 0}</div>
+        </div>
+      </div>
+    `;
+
+    // ── Owned Projects Panel ──
+    const projPanel = document.getElementById('org-projects-panel');
+    if (o.ownedProjects?.length) {
+      projPanel.innerHTML = o.ownedProjects.map(p => `
+        <div class="list-item" onclick="openProject('${p.id}')">
+          <div style="width:34px;height:34px;border-radius:8px;background:var(--zinc-800);border:1px solid var(--zinc-700);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📦</div>
+          <div style="flex:1;min-width:0">
+            <div class="list-item-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+            <div class="list-item-sub">${p.language || 'N/A'}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--zinc-400);flex-shrink:0">★ ${formatNum(p.stars)}</div>
+        </div>`).join('');
+    } else {
+      projPanel.innerHTML = emptyHtml('No owned projects');
+    }
+
+    // ── Employees Panel ──
+    const empPanel = document.getElementById('org-employees-panel');
+    if (o.employees?.length) {
+      empPanel.innerHTML = o.employees.map(c => `
+        <div class="list-item" onclick="openContributor('${c.id}')">
+          ${avatarHtml(c, 34)}
+          <div style="flex:1;min-width:0">
+            <div class="list-item-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+            <div class="list-item-sub">@${c.username}${c.role ? ' · ' + c.role : ''}</div>
+          </div>
+          ${c.since ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zinc-500);flex-shrink:0">since ${c.since}</div>` : ''}
+        </div>`).join('');
+    } else {
+      empPanel.innerHTML = emptyHtml('No employee data');
+    }
+
+    // ── Sponsoring Panel ──
+    const sponsorPanel = document.getElementById('org-sponsoring-panel');
+    const sponsoringWrap = document.getElementById('org-sponsoring-wrap');
+    if (o.sponsoring?.length) {
+      sponsorPanel.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--zinc-900)">
+          ${o.sponsoring.map(s => `
+            <div onclick="openProject('${s.id}')" style="background:var(--zinc-950);padding:16px 20px;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='var(--zinc-900)'" onmouseout="this.style.background='var(--zinc-950)'">
+              <div style="font-size:0.875rem;font-weight:500;color:var(--white);margin-bottom:4px">${s.name}</div>
+              ${s.amount ? `<div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--zinc-400)">$${formatNum(s.amount)}/yr</div>` : ''}
+            </div>`).join('')}
+        </div>`;
+    } else {
+      sponsoringWrap.style.display = 'none';
+    }
+
+  } catch (err) {
+    document.getElementById('org-header-card').innerHTML = errorHtml(err.message);
+  }
+}
+
+document.getElementById('orgs-back')?.addEventListener('click', () => {
+  document.getElementById('orgs-list-view').style.display = 'block';
+  document.getElementById('orgs-detail-view').style.display = 'none';
+});
 
 // ─── QUERIES ──────────────────────────────────────────────────────────────────
 function wireQueryTabs() {
@@ -473,6 +631,50 @@ async function evaluateAccess() {
     banner.style.background = 'rgba(251, 113, 133, 0.1)';
     banner.style.color = 'var(--rose)';
     banner.innerHTML = `Error: ${err.message}`;
+  }
+}
+
+// ─── AUDIT ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-refresh-audit')?.addEventListener('click', loadAudit);
+
+async function loadAudit() {
+  const list = document.getElementById('audit-list');
+  list.innerHTML = `<div style="padding:24px;"><div class="spinner" style="width:20px;height:20px;border:3px solid var(--primary);border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;"></div> Loading audit logs...</div>`;
+  
+  try {
+    const res = await fetch('/api/admin/audit');
+    const logs = await res.json();
+    
+    if (logs.length === 0) {
+      list.innerHTML = `<div class="empty-state">No audit logs found yet. Simulate an agent query to generate logs.</div>`;
+      return;
+    }
+
+    list.innerHTML = logs.map(l => {
+      const isGranted = l.decision === 'GRANTED';
+      const color = isGranted ? 'var(--success)' : 'var(--danger)';
+      const bg = isGranted ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+      const date = new Date(l.timestamp).toLocaleString();
+      
+      return `
+        <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; align-items: flex-start;">
+          <div style="background: ${bg}; color: ${color}; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; min-width: 80px; text-align: center;">
+            ${l.decision}
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <strong>User ${l.userId} requested ${l.action} on ${l.resourceType} (${l.resourceId || 'ALL'})</strong>
+              <span style="color: var(--text-muted); font-size: 0.85rem;">${date}</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; line-height: 1.4;">
+              ${l.reason}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    list.innerHTML = `<div style="padding:24px">${errorHtml(err.message)}</div>`;
   }
 }
 
