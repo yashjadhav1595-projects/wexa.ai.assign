@@ -316,6 +316,69 @@
       </div>
     </section>
 
+    <!-- Developer Guidelines -->
+    <section id="guidelines" style="margin-top: 120px;">
+      <div class="eyebrow">Developer Guidelines</div>
+      <h2 class="section-title">How to Secure Your LLM in 3 Steps</h2>
+      <p class="section-desc" style="max-width: 600px;">Stop data leaks in your AI apps instantly. Follow this integration flow to replace flat RBAC with GraphGuard ReBAC.</p>
+
+      <div class="workflow" style="margin-top: 40px; border-left: none; padding-left: 0; display: flex; flex-direction: column; gap: 40px;">
+        
+        <!-- Step 1 -->
+        <div class="feature-card" style="border-top: none; padding: 0; display: flex; gap: 32px; align-items: flex-start;">
+          <div class="step-num" style="font-size: 1.2rem; border-bottom: 1px solid var(--zinc-800); padding-bottom: 8px;">01</div>
+          <div style="flex: 1;">
+            <h3 style="font-size: 1.1rem; font-weight: 500; margin-bottom: 12px;">Sync your Identity & Resource Topologies</h3>
+            <p style="font-size: 0.9rem; color: var(--zinc-400); line-height: 1.6; margin-bottom: 16px;">
+              Don't manually manage permissions. Point GraphGuard to your existing providers (Okta, GitHub, Google Workspace) via the Sync API to construct the master Knowledge Graph of who works on what.
+            </p>
+            <div style="background: var(--zinc-950); border: 1px solid var(--zinc-900); padding: 16px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--zinc-200);">
+              POST https://api.graphguard.ai/v1/sync<br>
+              Authorization: Bearer gg_prod_1234<br><br>
+              {<br>
+              &nbsp;&nbsp;"provider": "github_enterprise",<br>
+              &nbsp;&nbsp;"sync_type": ["orgs", "repos", "contributors"]<br>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="feature-card" style="border-top: none; padding: 0; display: flex; gap: 32px; align-items: flex-start;">
+          <div class="step-num" style="font-size: 1.2rem; border-bottom: 1px solid var(--zinc-800); padding-bottom: 8px;">02</div>
+          <div style="flex: 1;">
+            <h3 style="font-size: 1.1rem; font-weight: 500; margin-bottom: 12px;">Wrap your RAG Retrieval Logic</h3>
+            <p style="font-size: 0.9rem; color: var(--zinc-400); line-height: 1.6; margin-bottom: 16px;">
+              Before feeding vector search results to the LLM context window, pass the retrieved asset IDs to the GraphGuard API. It runs a sub-millisecond Cypher shortest-path traversal to verify the user has a mathematical relationship path to the data.
+            </p>
+            <div style="background: var(--zinc-950); border: 1px solid var(--zinc-900); padding: 16px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--zinc-200);">
+              <span style="color: var(--zinc-500);"># Python Example with LangChain</span><br>
+              retrieved_docs = vector_store.similarity_search(query)<br>
+              <br>
+              <span style="color: var(--zinc-500);"># GraphGuard instantly prunes unauthorized docs</span><br>
+              secure_docs = graphguard.prune_context(<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;user_id=current_user.id,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;documents=retrieved_docs<br>
+              )<br><br>
+              llm.generate(prompt, context=secure_docs)
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="feature-card" style="border-top: none; padding: 0; display: flex; gap: 32px; align-items: flex-start;">
+          <div class="step-num" style="font-size: 1.2rem; border-bottom: 1px solid var(--zinc-800); padding-bottom: 8px;">03</div>
+          <div style="flex: 1;">
+            <h3 style="font-size: 1.1rem; font-weight: 500; margin-bottom: 12px;">Monitor Live Supply-Chain Risks in the Dashboard</h3>
+            <p style="font-size: 0.9rem; color: var(--zinc-400); line-height: 1.6;">
+              Once deployed, open your GraphGuard Dashboard to view real-time SOC2 audit logs. You can visually explore the graph to identify transitive data leaks, such as when two competing organizations share a contributor on a critical dependency layer.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- Pricing -->
     <section id="pricing">
       <div class="eyebrow">Pricing</div>
