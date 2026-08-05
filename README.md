@@ -17,9 +17,19 @@ Traditional Role-Based Access Control (RBAC) is too rigid. Attribute-Based Acces
 ## 💡 The Solution: GraphGuard
 GraphGuard AI is a high-performance **Relationship-Based Access Control (ReBAC)** engine powered by a native graph database (CognoDB/Neo4j). 
 
+**🌐 Live Demo:** [https://wexa-ai-assign.vercel.app/dashboard](https://wexa-ai-assign.vercel.app/dashboard)
+
 Instead of relying on flat permission tables, we map your entire enterprise identity and data landscape into a rich Knowledge Graph. Before an LLM retrieves context, GraphGuard instantly traverses the graph to evaluate multi-hop permission paths (e.g., `User -> Team -> Department -> Project <- Asset`). 
 
 If a user does not have a valid, provable relationship path to the requested data, the LLM never sees it. **Zero hallucinations, zero data leaks.**
+
+---
+
+## 🖼️ Screenshots
+
+| Graph Explorer | Access Control Audit |
+|---|---|
+| ![Graph Explorer](docs/graph-explorer.png) | ![ReBAC Audit](docs/rebac-audit.png) |
 
 ---
 
@@ -106,6 +116,19 @@ GraphGuard is designed as a high-throughput, low-latency authorization backplane
 
 ### 1. Data Schema (Nodes & Relationships)
 The core engine maps identity providers (Okta, Entra) and resource providers (GitHub, AWS, internal DBs) into a unified ontology:
+
+**Graph Model Diagram:**
+```text
+[Organization] ──WORKS_AT──> [Contributor]
+      ↑                            │
+   PART_OF                   CONTRIBUTED_TO
+      │                            ↓
+  [Project] ──BELONGS_TO──> [DataAsset]
+      │
+  DEPENDS_ON
+      ↓
+  [Project]
+```
 
 **Nodes:**
 - `(:Contributor)` - Human or machine identities.
