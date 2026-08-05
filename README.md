@@ -27,9 +27,13 @@ If a user does not have a valid, provable relationship path to the requested dat
 
 ## 🖼️ Screenshots
 
-| Graph Explorer | Access Control Audit |
+| Landing Page | Dashboard Overview |
 |---|---|
-| ![Graph Explorer](docs/graph-explorer.png) | ![ReBAC Audit](docs/rebac-audit.png) |
+| ![Landing](docs/image1.png) | ![Dashboard](docs/image2.png) |
+
+| ReBAC Graph Explorer | Organizations Hierarchy |
+|---|---|
+| ![Graph Explorer](docs/image3.png) | ![Organizations](docs/image4.png) |
 
 ---
 
