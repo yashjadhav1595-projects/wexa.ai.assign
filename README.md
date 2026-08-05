@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="./public/favicon.ico" width="80" height="80" alt="GraphGuard AI Logo">
   <h1>GraphGuard AI</h1>
   <p><b>Enterprise-Grade ReBAC (Relationship-Based Access Control) for Secure LLM Deployments.</b></p>
   <p><i>The mission-critical infrastructure required to bring Generative AI to the enterprise without leaking data.</i></p>
