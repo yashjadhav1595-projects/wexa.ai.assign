@@ -99,4 +99,56 @@ RETURN path
 **Result:** Sub-millisecond authorization evaluation at infinite scale.
 
 ---
+
+## 🛠️ Technical Architecture Deep Dive
+
+GraphGuard is designed as a high-throughput, low-latency authorization backplane.
+
+### 1. Data Schema (Nodes & Relationships)
+The core engine maps identity providers (Okta, Entra) and resource providers (GitHub, AWS, internal DBs) into a unified ontology:
+
+**Nodes:**
+- `(:Contributor)` - Human or machine identities.
+- `(:Project)` - Codebases, vector DB namespaces, or software assets.
+- `(:Organization)` - Companies or top-level enterprise units.
+- `(:DataAsset)` - The highly-sensitive resources LLMs are trying to access.
+
+**Relationships:**
+- `(Contributor)-[:WORKS_AT {role}]->(Organization)`
+- `(Contributor)-[:CONTRIBUTED_TO {commits}]->(Project)`
+- `(Project)-[:DEPENDS_ON]->(Project)`
+- `(DataAsset)-[:BELONGS_TO]->(Project)`
+
+### 2. High-Performance ReBAC Queries
+Our API executes native `openCypher` traversals to validate access. 
+
+**Query: Supply-Chain Risk Analysis**
+*Goal: Find unauthorized paths where competing orgs share contributors.*
+```cypher
+MATCH (orgA:Organization)<-[:PART_OF]-(projA:Project)-[:DEPENDS_ON]->(projB:Project)-[:PART_OF]->(orgB:Organization)
+WHERE orgA <> orgB
+MATCH (c:Contributor)-[:CONTRIBUTED_TO]->(projA)
+MATCH (c)-[:CONTRIBUTED_TO]->(projB)
+RETURN orgA.name, projA.name, projB.name, orgB.name, c.name
+```
+
+**Query: Instant ReBAC Verification**
+*Goal: Check if a user has a valid path to a DataAsset via organization or project hierarchy.*
+```cypher
+MATCH path = shortestPath((u:Contributor {id: $userId})-[:WORKS_AT|CONTRIBUTED_TO|BELONGS_TO*1..5]-(a:DataAsset {id: $assetId}))
+RETURN path, length(path) as hops
+```
+
+### 3. API & Endpoints
+The Node.js/Express backend exposes ultra-fast REST endpoints designed to be called by LangChain or LlamaIndex before executing retrieval logic:
+
+- `GET /api/auth/check-access?contributorId={id}&assetId={id}`: The core ReBAC endpoint. Returns `200 OK` (with the relationship path) if access is permitted, or `403 Forbidden` if no path exists.
+- `POST /api/admin/sync`: Hydrates the graph database by pulling live hierarchies from GitHub/GitLab APIs.
+- `GET /api/admin/audit`: Returns the immutable ledger of all ReBAC decisions for SOC2 compliance.
+
+### 4. Security & Optimization
+- **Prepared Statements:** All Cypher queries utilize parameterized inputs (`$userId`, `$assetId`), preventing Cypher-injection attacks and enabling query plan caching in the DB engine.
+- **Stateless Edge Delivery:** Deployed on Vercel, the backend utilizes stateless functions that hold minimal memory, scaling infinitely to match LLM inference volume.
+
+---
 *Built to redefine enterprise AI security.*
