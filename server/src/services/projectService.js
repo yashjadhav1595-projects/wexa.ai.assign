@@ -1,8 +1,7 @@
 const { executeRead } = require('../config/db');
 const { parseNeo4jNumber, parseNodeProperties } = require('../utils/neo4jUtils');
 const logger = require('../utils/logger');
-let cache = null;
-try { cache = require('../config/queryCache.json'); } catch(e) {}
+const cache = require('../config/queryCache');
 
 class ProjectService {
   async getAllProjects() {

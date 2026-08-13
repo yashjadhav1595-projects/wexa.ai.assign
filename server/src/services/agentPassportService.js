@@ -1,8 +1,7 @@
 const crypto = require('crypto');
 const { executeRead, executeWrite } = require('../config/db');
 const logger = require('../utils/logger');
-let cache = null;
-try { cache = require('../config/queryCache.json'); } catch(e) {}
+const cache = require('../config/queryCache');
 
 const PASSPORT_SECRET = process.env.AGENT_SECRET_KEY || 'graphguard_agent_master_secret_2026';
 
@@ -35,7 +34,6 @@ class AgentPassportService {
 
     logger.info(`[AgentPassport] Minted passport ${passportId} for agent '${agentId}' delegated by '${delegatedBy}' (TTL: ${ttlMinutes}m)`);
 
-    // Record passport issuance in graph
     try {
       await executeWrite(
         `MERGE (a:Agent {id: $agentId})

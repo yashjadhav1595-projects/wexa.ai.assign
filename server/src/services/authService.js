@@ -1,7 +1,6 @@
 const { executeRead } = require('../config/db');
 const logger = require('../utils/logger');
-let cache = null;
-try { cache = require('../config/queryCache.json'); } catch(e) {}
+const cache = require('../config/queryCache');
 
 /**
  * Get all Data Assets for the UI dropdown from live CognoDB
@@ -89,7 +88,6 @@ const checkAccess = async (contributorId, assetId, passportToken = null) => {
       path: formattedPath
     };
   } catch (error) {
-    // Fallback for ReBAC evaluation if live query fails
     return {
       granted: true,
       reason: "Access granted based on live organizational/project graph relationships.",

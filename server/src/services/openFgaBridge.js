@@ -1,7 +1,6 @@
 const { executeRead } = require('../config/db');
 const logger = require('../utils/logger');
-let cache = null;
-try { cache = require('../config/queryCache.json'); } catch(e) {}
+const cache = require('../config/queryCache');
 
 class OpenFgaBridgeService {
   /**

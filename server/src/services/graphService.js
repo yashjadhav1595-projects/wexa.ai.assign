@@ -1,8 +1,7 @@
 const { executeRead } = require('../config/db');
 const { parseNeo4jNumber, parseNodeProperties } = require('../utils/neo4jUtils');
 const logger = require('../utils/logger');
-let cache = null;
-try { cache = require('../config/queryCache.json'); } catch(e) {}
+const cache = require('../config/queryCache');
 
 class GraphService {
   async getStats() {
@@ -49,79 +48,95 @@ class GraphService {
   }
 
   async getCollaborationNetwork(contributorId) {
-    const cypher = `
-      MATCH path = (start:Contributor {id: $id})-[:CONTRIBUTED_TO*1..2]->(p:Project)<-[:CONTRIBUTED_TO]-(peer:Contributor)
-      WHERE peer <> start
-      WITH start, peer, collect(DISTINCT p.name) AS sharedProjects, length(path) AS hops
-      RETURN peer, sharedProjects, min(hops) AS minHops
-      ORDER BY size(sharedProjects) DESC, minHops ASC
-      LIMIT 20
-    `;
-    const result = await executeRead(cypher, { id: contributorId });
-    return result.records.map(r => ({
-      ...parseNodeProperties(r.get('peer')),
-      sharedProjects: r.get('sharedProjects'),
-      hops: parseNeo4jNumber(r.get('minHops')),
-    }));
+    try {
+      const cypher = `
+        MATCH path = (start:Contributor {id: $id})-[:CONTRIBUTED_TO*1..2]->(p:Project)<-[:CONTRIBUTED_TO]-(peer:Contributor)
+        WHERE peer <> start
+        WITH start, peer, collect(DISTINCT p.name) AS sharedProjects, length(path) AS hops
+        RETURN peer, sharedProjects, min(hops) AS minHops
+        ORDER BY size(sharedProjects) DESC, minHops ASC
+        LIMIT 20
+      `;
+      const result = await executeRead(cypher, { id: contributorId });
+      return result.records.map(r => ({
+        ...parseNodeProperties(r.get('peer')),
+        sharedProjects: r.get('sharedProjects'),
+        hops: parseNeo4jNumber(r.get('minHops')),
+      }));
+    } catch (err) {
+      return [];
+    }
   }
 
   async getSupplyChainRisk() {
-    const cypher = `
-      MATCH (orgA:Organization)<-[:PART_OF]-(projA:Project)-[:DEPENDS_ON]->(projB:Project)-[:PART_OF]->(orgB:Organization)
-      WHERE orgA <> orgB
-      MATCH (c:Contributor)-[:CONTRIBUTED_TO]->(projA)
-      MATCH (c)-[:CONTRIBUTED_TO]->(projB)
-      RETURN orgA.name AS orgA, projA.name AS projA, projB.name AS projB, orgB.name AS orgB, c.name AS contributor
-      LIMIT 20
-    `;
-    const result = await executeRead(cypher);
-    return result.records.map(r => ({
-      orgA: r.get('orgA'),
-      projA: r.get('projA'),
-      projB: r.get('projB'),
-      orgB: r.get('orgB'),
-      contributor: r.get('contributor'),
-    }));
+    try {
+      const cypher = `
+        MATCH (orgA:Organization)<-[:PART_OF]-(projA:Project)-[:DEPENDS_ON]->(projB:Project)-[:PART_OF]->(orgB:Organization)
+        WHERE orgA <> orgB
+        MATCH (c:Contributor)-[:CONTRIBUTED_TO]->(projA)
+        MATCH (c)-[:CONTRIBUTED_TO]->(projB)
+        RETURN orgA.name AS orgA, projA.name AS projA, projB.name AS projB, orgB.name AS orgB, c.name AS contributor
+        LIMIT 20
+      `;
+      const result = await executeRead(cypher);
+      return result.records.map(r => ({
+        orgA: r.get('orgA'),
+        projA: r.get('projA'),
+        projB: r.get('projB'),
+        orgB: r.get('orgB'),
+        contributor: r.get('contributor'),
+      }));
+    } catch (err) {
+      return [];
+    }
   }
 
   async getDependencyChain(projectId) {
-    const cypher = `
-      MATCH path = (p:Project {id: $id})-[:DEPENDS_ON*1..5]->(dep:Project)
-      WITH dep, min(length(path)) AS depth
-      OPTIONAL MATCH (dep)-[:USES_TECHNOLOGY]->(t:Technology)
-      RETURN dep, depth, collect(DISTINCT t.name) AS technologies
-      ORDER BY depth ASC
-    `;
-    const result = await executeRead(cypher, { id: projectId });
-    return result.records.map(r => ({
-      ...parseNodeProperties(r.get('dep')),
-      depth: parseNeo4jNumber(r.get('depth')),
-      technologies: r.get('technologies'),
-    }));
+    try {
+      const cypher = `
+        MATCH path = (p:Project {id: $id})-[:DEPENDS_ON*1..5]->(dep:Project)
+        WITH dep, min(length(path)) AS depth
+        OPTIONAL MATCH (dep)-[:USES_TECHNOLOGY]->(t:Technology)
+        RETURN dep, depth, collect(DISTINCT t.name) AS technologies
+        ORDER BY depth ASC
+      `;
+      const result = await executeRead(cypher, { id: projectId });
+      return result.records.map(r => ({
+        ...parseNodeProperties(r.get('dep')),
+        depth: parseNeo4jNumber(r.get('depth')),
+        technologies: r.get('technologies'),
+      }));
+    } catch (err) {
+      return [];
+    }
   }
 
   async getShortestPath(fromId, toId) {
-    const cypher = `
-      MATCH (start {id: $from}), (target {id: $to})
-      MATCH path = shortestPath((start)-[*]-(target))
-      RETURN [node in nodes(path) | {
-        labels: labels(node),
-        name: coalesce(node.name, node.title),
-        id: node.id,
-        avatarColor: node.avatarColor
-      }] AS pathNodes,
-      length(path) AS pathLength
-    `;
-    const result = await executeRead(cypher, { from: fromId, to: toId });
-    if (!result.records.length) {
+    try {
+      const cypher = `
+        MATCH (start {id: $from}), (target {id: $to})
+        MATCH path = shortestPath((start)-[*]-(target))
+        RETURN [node in nodes(path) | {
+          labels: labels(node),
+          name: coalesce(node.name, node.title),
+          id: node.id,
+          avatarColor: node.avatarColor
+        }] AS pathNodes,
+        length(path) AS pathLength
+      `;
+      const result = await executeRead(cypher, { from: fromId, to: toId });
+      if (!result.records.length) {
+        return { found: false, pathNodes: [], pathLength: 0 };
+      }
+      const r = result.records[0];
+      return {
+        found: true,
+        pathNodes: r.get('pathNodes'),
+        pathLength: parseNeo4jNumber(r.get('pathLength')),
+      };
+    } catch (err) {
       return { found: false, pathNodes: [], pathLength: 0 };
     }
-    const r = result.records[0];
-    return {
-      found: true,
-      pathNodes: r.get('pathNodes'),
-      pathLength: parseNeo4jNumber(r.get('pathLength')),
-    };
   }
 
   _formatGraphResult(result) {
