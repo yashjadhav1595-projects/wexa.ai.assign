@@ -2,10 +2,10 @@ require('dotenv').config();
 const neo4j = require('neo4j-driver');
 const logger = require('../utils/logger');
 
-// CognoDB Cloud Cluster Configuration with SSL Certificate Tolerance for Serverless Lambdas
-const URI = 'bolt+ssc://db-588b41b6.databases.cognodb.com';
-const USER = 'cognodb';
-const PASSWORD = '4248337d3439dc7f34b1e1729e62d31d';
+// CognoDB Cloud Cluster Configuration
+const URI = process.env.COGNODB_URI || 'bolt+s://db-588b41b6.databases.cognodb.com';
+const USER = process.env.COGNODB_USER || 'cognodb';
+const PASSWORD = process.env.COGNODB_PASSWORD || '4248337d3439dc7f34b1e1729e62d31d';
 
 let driverInstance = null;
 
@@ -15,9 +15,7 @@ function getDriver() {
       URI,
       neo4j.auth.basic(USER, PASSWORD),
       {
-        encrypted: 'ENCRYPTION_ON',
-        trust: 'TRUST_ALL_CERTIFICATES',
-        maxConnectionPoolSize: 10,
+        maxConnectionPoolSize: 20,
         connectionTimeout: 8000,
       }
     );
@@ -47,21 +45,6 @@ async function executeRead(cypher, params = {}) {
   const session = driver.session();
   try {
     return await session.executeRead(tx => tx.run(cypher, params));
-  } catch (err) {
-    if (err.message && (err.message.includes('authentication') || err.message.includes('Session') || err.message.includes('Connection'))) {
-      if (driverInstance) {
-        try { await driverInstance.close(); } catch (e) {}
-        driverInstance = null;
-      }
-      const freshDriver = getDriver();
-      const freshSession = freshDriver.session();
-      try {
-        return await freshSession.executeRead(tx => tx.run(cypher, params));
-      } finally {
-        await freshSession.close();
-      }
-    }
-    throw err;
   } finally {
     await session.close();
   }
@@ -75,21 +58,6 @@ async function executeWrite(cypher, params = {}) {
   const session = driver.session();
   try {
     return await session.executeWrite(tx => tx.run(cypher, params));
-  } catch (err) {
-    if (err.message && (err.message.includes('authentication') || err.message.includes('Session') || err.message.includes('Connection'))) {
-      if (driverInstance) {
-        try { await driverInstance.close(); } catch (e) {}
-        driverInstance = null;
-      }
-      const freshDriver = getDriver();
-      const freshSession = freshDriver.session();
-      try {
-        return await freshSession.executeWrite(tx => tx.run(cypher, params));
-      } finally {
-        await freshSession.close();
-      }
-    }
-    throw err;
   } finally {
     await session.close();
   }
