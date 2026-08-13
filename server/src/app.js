@@ -10,6 +10,7 @@ const logger = require('./utils/logger');
 const { verifyConnectivity } = require('./config/db');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security and Logging Middlewares
 app.use(helmet({
