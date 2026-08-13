@@ -9,7 +9,7 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
-// Support both /api/... and direct route requests
+// Normalize URLs so both /api/health and /health work
 app.use('/api', apiRoutes);
 app.use('/', apiRoutes);
 
@@ -24,4 +24,7 @@ app.use((req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-module.exports = app;
+// Standalone request handler wrapper for Vercel Serverless
+module.exports = (req, res) => {
+  return app(req, res);
+};
