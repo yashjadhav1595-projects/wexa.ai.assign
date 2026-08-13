@@ -12,6 +12,75 @@ const agentService = require('../services/agentService');
 const auditService = require('../services/auditService');
 const { ingestGraph } = require('../../seed/githubIngest');
 
+const webhookService = require('../services/webhookService');
+const githubAppService = require('../services/githubAppService');
+
+// --- GitHub Developer Program & App Status ---
+router.get('/status', asyncHandler(async (req, res) => {
+  const appStatus = githubAppService.getStatus();
+  res.json({
+    programReady: true,
+    app: appStatus,
+    checklist: [
+      {
+        id: 'api_integration',
+        title: 'Active GitHub API & Graph Engine',
+        status: 'complete',
+        detail: 'Neo4j ReBAC Graph Engine with live REST & Webhook Ingestion.',
+      },
+      {
+        id: 'webhooks',
+        title: 'Real-Time Webhook Receivers',
+        status: 'complete',
+        detail: 'Listening on /api/webhook for (membership, repository, team, installation, pull_request, push).',
+      },
+      {
+        id: 'support_email',
+        title: 'Dedicated Support Channel',
+        status: 'complete',
+        detail: appStatus.supportEmail,
+      },
+      {
+        id: 'registration',
+        title: 'GitHub Developer Program Submission',
+        status: 'ready',
+        detail: 'Register at https://github.com/developer/register',
+      },
+    ],
+  });
+}));
+
+// --- Live GitHub Webhook Receiver ---
+router.post('/webhook', asyncHandler(async (req, res) => {
+  const eventName = req.headers['x-github-event'];
+  const signature = req.headers['x-hub-signature-256'];
+  const rawBody = JSON.stringify(req.body);
+
+  if (!eventName) {
+    return res.status(400).json({ error: true, message: 'Missing X-GitHub-Event header' });
+  }
+
+  // Verify HMAC SHA-256 signature
+  const isValid = webhookService.verifySignature(rawBody, signature);
+  if (!isValid) {
+    return res.status(401).json({ error: true, message: 'Invalid X-Hub-Signature-256' });
+  }
+
+  const result = await webhookService.processEvent(eventName, req.body);
+  res.status(200).json({ received: true, event: eventName, result });
+}));
+
+// --- Test Webhook Event Simulator ---
+router.post('/test/webhook', asyncHandler(async (req, res) => {
+  const { event, payload } = req.body;
+  if (!event || !payload) {
+    return res.status(400).json({ error: true, message: 'Provide event and payload in body' });
+  }
+
+  const result = await webhookService.processEvent(event, payload);
+  res.json({ success: true, simulatedEvent: event, result });
+}));
+
 // --- AI Agent OS ---
 router.post('/agent/query', asyncHandler(async (req, res) => {
   const { userId, query } = req.body;

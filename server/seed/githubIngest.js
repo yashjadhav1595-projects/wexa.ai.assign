@@ -10,16 +10,21 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const neo4j = require('neo4j-driver');
 const https = require('https');
 
-const URI = process.env.COGNODB_URI;
-const USER = process.env.COGNODB_USER || 'cognodb';
-const PASSWORD = process.env.COGNODB_PASSWORD;
+let driver = null;
 
-if (!URI || !PASSWORD) {
-  console.error('[Ingest] ERROR: Set COGNODB_URI and COGNODB_PASSWORD in your .env file.');
-  process.exit(1);
+function getDriver() {
+  if (driver) return driver;
+  const URI = process.env.COGNODB_URI;
+  const USER = process.env.COGNODB_USER || 'cognodb';
+  const PASSWORD = process.env.COGNODB_PASSWORD;
+
+  if (!URI || !PASSWORD) {
+    throw new Error('[Ingest] ERROR: Set COGNODB_URI and COGNODB_PASSWORD in your .env file.');
+  }
+
+  driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));
+  return driver;
 }
-
-const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));
 
 // No default targets needed, passed dynamically
 
@@ -86,7 +91,7 @@ const syntheticAssets = {
 const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#22c55e', '#a855f7', '#ef4444', '#0ea5e9'];
 
 async function ingestGraph(orgNames) {
-  const session = driver.session({ database: 'neo4j' });
+  const session = getDriver().session({ database: 'neo4j' });
   
   try {
     await createConstraints(session);

@@ -6,17 +6,17 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Ensure DB is connected before listening
     await verifyConnectivity();
-    
-    app.listen(PORT, () => {
-      logger.info(`Server running at http://localhost:${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+    logger.info('Database connectivity verified.');
   } catch (error) {
-    logger.error('Failed to start server due to database connectivity issues.', { error: error.message });
-    process.exit(1);
+    logger.warn(`Database not connected: ${error.message}. Running in development/standby mode.`);
   }
+
+  app.listen(PORT, () => {
+    logger.info(`🚀 GraphGuard AI Server running at http://localhost:${PORT}`);
+    logger.info(`📡 Webhook Receiver endpoint: http://localhost:${PORT}/api/webhook`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
 }
 
 // Graceful Shutdown

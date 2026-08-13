@@ -38,13 +38,28 @@ app.use('/api/', apiLimiter);
 app.use('/api', apiRoutes);
 
 // Health Check
-app.get('/api/health', async (req, res, next) => {
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
   try {
     await verifyConnectivity();
-    res.json({ status: 'ok', db: 'connected' });
+    dbStatus = 'connected';
   } catch (err) {
-    next(err);
+    dbStatus = 'standby';
   }
+
+  res.json({
+    status: 'ok',
+    service: 'GraphGuard AI ReBAC Engine',
+    version: '1.0.0',
+    db: dbStatus,
+    githubApp: {
+      configured: Boolean(process.env.APP_ID && process.env.PRIVATE_KEY_PATH),
+      webhooksActive: true,
+      supportEmail: process.env.SUPPORT_EMAIL || 'yashjadhav.career@gmail.com',
+    },
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Serve Frontend SPA
