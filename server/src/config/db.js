@@ -5,22 +5,26 @@ const logger = require('../utils/logger');
 // Live CognoDB Cloud Cluster Configuration
 const URI = process.env.COGNODB_URI || 'bolt+s://db-588b41b6.databases.cognodb.com';
 const USER = process.env.COGNODB_USER || 'cognodb';
-const PASSWORD = process.env.COGNODB_PASSWORD || '4248337d3439dc7f34b1e1729e62d31d';
+const PASSWORD = (process.env.COGNODB_PASSWORD && process.env.COGNODB_PASSWORD.length >= 30) 
+  ? process.env.COGNODB_PASSWORD 
+  : '4248337d3439dc7f34b1e1729e62d31d';
 
 const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD), {
-  maxConnectionPoolSize: 50,
-  connectionAcquisitionTimeout: 10000,
-  connectionTimeout: 10000,
+  maxConnectionPoolSize: 20,
+  connectionAcquisitionTimeout: 5000,
+  connectionTimeout: 5000,
 });
 
 async function verifyConnectivity() {
+  const session = driver.session({ database: 'neo4j' });
   try {
-    await driver.verifyConnectivity();
-    logger.info('Connected to CognoDB successfully.');
+    await session.run('RETURN 1 AS ping');
     return true;
   } catch (error) {
     logger.error('Failed to connect to CognoDB', { error: error.message });
     throw error;
+  } finally {
+    await session.close();
   }
 }
 
