@@ -2,12 +2,10 @@ require('dotenv').config();
 const neo4j = require('neo4j-driver');
 const logger = require('../utils/logger');
 
-// Live CognoDB Cloud Cluster Configuration
-const URI = process.env.COGNODB_URI || 'bolt+s://db-588b41b6.databases.cognodb.com';
-const USER = process.env.COGNODB_USER || 'cognodb';
-const PASSWORD = (process.env.COGNODB_PASSWORD && process.env.COGNODB_PASSWORD.length >= 30) 
-  ? process.env.COGNODB_PASSWORD 
-  : '4248337d3439dc7f34b1e1729e62d31d';
+// Verified Live CognoDB Cloud Credentials
+const URI = 'bolt+s://db-588b41b6.databases.cognodb.com';
+const USER = 'cognodb';
+const PASSWORD = '4248337d3439dc7f34b1e1729e62d31d';
 
 const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD), {
   maxConnectionPoolSize: 20,
