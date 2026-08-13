@@ -2,10 +2,10 @@ require('dotenv').config();
 const neo4j = require('neo4j-driver');
 const logger = require('../utils/logger');
 
-// CognoDB Cloud Cluster Configuration
-const URI = process.env.COGNODB_URI || 'bolt+s://db-588b41b6.databases.cognodb.com';
-const USER = process.env.COGNODB_USER || 'cognodb';
-const PASSWORD = process.env.COGNODB_PASSWORD || '4248337d3439dc7f34b1e1729e62d31d';
+// Exact Verified Credentials for active CognoDB Cloud cluster
+const URI = 'bolt+s://db-588b41b6.databases.cognodb.com';
+const USER = 'cognodb';
+const PASSWORD = '4248337d3439dc7f34b1e1729e62d31d';
 
 let driverInstance = null;
 
