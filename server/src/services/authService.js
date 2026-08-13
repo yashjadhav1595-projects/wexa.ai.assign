@@ -1,6 +1,5 @@
 const { executeRead } = require('../config/db');
 const logger = require('../utils/logger');
-const cache = require('../config/queryCache');
 
 /**
  * Get all Data Assets for the UI dropdown from live CognoDB
@@ -25,7 +24,7 @@ const getAllAssets = async () => {
       };
     });
   } catch (error) {
-    if (cache && cache.assets) return cache.assets;
+    logger.error('Error in getAllAssets', { error: error.message });
     throw error;
   }
 };
@@ -88,17 +87,8 @@ const checkAccess = async (contributorId, assetId, passportToken = null) => {
       path: formattedPath
     };
   } catch (error) {
-    return {
-      granted: true,
-      reason: "Access granted based on live organizational/project graph relationships.",
-      path: [
-        { type: "node", label: "Contributor", name: contributorId },
-        { type: "relationship", label: "WORKS_AT" },
-        { type: "node", label: "Organization", name: "Org" },
-        { type: "relationship", label: "OWNS_ASSET" },
-        { type: "node", label: "DataAsset", name: assetId }
-      ]
-    };
+    logger.error('Error in checkAccess', { error: error.message, contributorId, assetId });
+    throw error;
   }
 };
 
