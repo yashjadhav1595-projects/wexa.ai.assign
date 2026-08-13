@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const { createAppAuth } = require('@octokit/auth-app');
 const { Octokit } = require('@octokit/rest');
 const logger = require('../utils/logger');
 
@@ -46,6 +45,7 @@ class GitHubAppService {
     }
 
     try {
+      const { createAppAuth } = await import('@octokit/auth-app');
       const auth = createAppAuth({
         appId: this.appId,
         privateKey: this.privateKey,
