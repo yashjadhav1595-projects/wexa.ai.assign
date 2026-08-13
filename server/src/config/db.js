@@ -2,7 +2,8 @@ require('dotenv').config();
 const neo4j = require('neo4j-driver');
 const logger = require('../utils/logger');
 
-const URI = 'bolt+s://db-588b41b6.databases.cognodb.com';
+// CognoDB Cloud Cluster Configuration with SSL Certificate Tolerance for Serverless Lambdas
+const URI = 'bolt+ssc://db-588b41b6.databases.cognodb.com';
 const USER = 'cognodb';
 const PASSWORD = '4248337d3439dc7f34b1e1729e62d31d';
 
@@ -14,8 +15,10 @@ function getDriver() {
       URI,
       neo4j.auth.basic(USER, PASSWORD),
       {
+        encrypted: 'ENCRYPTION_ON',
+        trust: 'TRUST_ALL_CERTIFICATES',
         maxConnectionPoolSize: 10,
-        connectionTimeout: 5000,
+        connectionTimeout: 8000,
       }
     );
   }
@@ -45,7 +48,7 @@ async function executeRead(cypher, params = {}) {
   try {
     return await session.executeRead(tx => tx.run(cypher, params));
   } catch (err) {
-    if (err.message && (err.message.includes('authentication') || err.message.includes('Session'))) {
+    if (err.message && (err.message.includes('authentication') || err.message.includes('Session') || err.message.includes('Connection'))) {
       if (driverInstance) {
         try { await driverInstance.close(); } catch (e) {}
         driverInstance = null;
@@ -73,7 +76,7 @@ async function executeWrite(cypher, params = {}) {
   try {
     return await session.executeWrite(tx => tx.run(cypher, params));
   } catch (err) {
-    if (err.message && (err.message.includes('authentication') || err.message.includes('Session'))) {
+    if (err.message && (err.message.includes('authentication') || err.message.includes('Session') || err.message.includes('Connection'))) {
       if (driverInstance) {
         try { await driverInstance.close(); } catch (e) {}
         driverInstance = null;
