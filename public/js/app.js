@@ -18,13 +18,16 @@ const pageTitles = {
   contributors: 'Contributors',
   projects: 'Projects',
   organizations: 'Organizations',
+  'agent-os': 'Agent Passports & Identity',
+  'rag-simulator': 'Zero-Trust RAG Simulator',
+  'openfga-bridge': 'Zanzibar / OpenFGA Bridge',
   auth: 'Graph-Based Access Control',
   audit: 'Security Audit Logs'
 };
 
 function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(l => {
+  document.querySelectorAll('.nav-btn').forEach(l => {
     l.classList.toggle('active', l.dataset.page === page);
   });
   
@@ -34,16 +37,20 @@ function navigate(page) {
   const breadcrumb = document.getElementById('topbar-breadcrumb');
   if (breadcrumb) breadcrumb.textContent = pageTitles[page] || 'Dashboard';
 
-  if (page === 'home')          loadHome();
-  if (page === 'graph')         loadGraph();
-  if (page === 'contributors')  loadContributors();
-  if (page === 'projects')      loadProjects();
-  if (page === 'organizations') loadOrganizations();
-  if (page === 'queries')       loadQueries();
-  if (page === 'auth')          loadAuth();
-  if (page === 'audit')         loadAudit();
+  if (page === 'home')           loadHome();
+  if (page === 'graph')          loadGraph();
+  if (page === 'contributors')   loadContributors();
+  if (page === 'projects')       loadProjects();
+  if (page === 'organizations')  loadOrganizations();
+  if (page === 'queries')        loadQueries();
+  if (page === 'agent-os')       loadAgentOs();
+  if (page === 'rag-simulator')  loadRagSimulator();
+  if (page === 'openfga-bridge') loadOpenFgaBridge();
+  if (page === 'auth')           loadAuth();
+  if (page === 'audit')          loadAudit();
 
-  document.querySelector('.scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollArea = document.querySelector('.scroll-area') || document.querySelector('.main-content') || window;
+  if (scrollArea.scrollTo) scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 document.querySelectorAll('[data-page]').forEach(el => {
@@ -678,6 +685,228 @@ async function loadAudit() {
   }
 }
 
+// ─── AGENT OS & PASSPORTS ───────────────────────────────────────────────────
+async function loadAgentOs() {
+  const grid = document.getElementById('agent-cards-grid');
+  const agentSelect = document.getElementById('mint-agent-select');
+  const userSelect = document.getElementById('mint-user-select');
+
+  try {
+    const data = await API.agentList();
+    const agents = data.agents || [];
+
+    grid.innerHTML = agents.map(a => `
+      <div class="card" style="border:1px solid var(--zinc-800);background:var(--zinc-950);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--white);">${a.name}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#818cf8;margin-top:2px;">ID: ${a.id}</div>
+          </div>
+          <span class="status-pill" style="border-color:rgba(99,102,241,0.3);color:#818cf8;font-size:0.6rem;">${a.type}</span>
+        </div>
+        
+        <div style="font-size:0.75rem;color:var(--zinc-400);display:flex;flex-direction:column;gap:4px;">
+          <div><strong>Framework:</strong> ${a.framework}</div>
+          <div><strong>Department:</strong> ${a.department}</div>
+          <div><strong>Max Graph Hops:</strong> ${a.maxHops}</div>
+        </div>
+
+        <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--zinc-900);display:flex;justify-content:space-between;align-items:center;font-size:0.7rem;color:var(--zinc-500);font-family:'JetBrains Mono',monospace;">
+          <span>ACTIVE PASSPORTS:</span>
+          <span style="color:var(--green);font-weight:600;">${a.activePassports || 1} ACTIVE</span>
+        </div>
+      </div>
+    `).join('');
+
+    agentSelect.innerHTML = agents.map(a => `<option value="${a.id}">${a.name} (${a.id})</option>`).join('');
+
+    // Load users into delegator select
+    if (!state.contributors) {
+      state.contributors = await API.contributors();
+    }
+    userSelect.innerHTML = state.contributors.map(c => `<option value="${c.id}">${c.name} (@${c.username || c.id})</option>`).join('');
+
+  } catch (err) {
+    grid.innerHTML = `<div style="padding:24px;">${errorHtml(err.message)}</div>`;
+  }
+}
+
+document.getElementById('btn-mint-passport')?.addEventListener('click', async () => {
+  const agentId = document.getElementById('mint-agent-select').value;
+  const delegatedBy = document.getElementById('mint-user-select').value;
+  const task = document.getElementById('mint-task-input').value.trim();
+  const ttlMinutes = Number(document.getElementById('mint-ttl-input').value) || 60;
+  const maxHops = Number(document.getElementById('mint-hops-input').value) || 2;
+
+  const btn = document.getElementById('btn-mint-passport');
+  btn.disabled = true;
+  btn.textContent = 'Minting...';
+
+  try {
+    const res = await API.mintPassport({ agentId, delegatedBy, task, ttlMinutes, maxHops });
+    if (res.success && res.passport) {
+      document.getElementById('mint-result-box').style.display = 'block';
+      document.getElementById('mint-token-display').textContent = res.passport.token;
+      document.getElementById('verify-token-input').value = res.passport.token;
+    }
+  } catch (err) {
+    alert(`Failed to mint passport: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Mint Ephemeral Passport';
+  }
+});
+
+document.getElementById('btn-copy-passport')?.addEventListener('click', () => {
+  const token = document.getElementById('mint-token-display').textContent;
+  navigator.clipboard.writeText(token);
+  alert('Passport token copied to clipboard!');
+});
+
+document.getElementById('btn-verify-passport')?.addEventListener('click', async () => {
+  const token = document.getElementById('verify-token-input').value.trim();
+  if (!token) return;
+
+  const box = document.getElementById('verify-result-box');
+  const badge = document.getElementById('verify-status-badge');
+  const jsonPre = document.getElementById('verify-payload-json');
+
+  try {
+    const res = await API.verifyPassport(token);
+    box.style.display = 'block';
+
+    if (res.valid) {
+      badge.style.color = 'var(--green)';
+      badge.innerHTML = `✅ VALID PASSPORT (HMAC-SHA256 Cryptographic Signature Verified)`;
+      jsonPre.textContent = JSON.stringify(res.payload, null, 2);
+    } else {
+      badge.style.color = 'var(--red)';
+      badge.innerHTML = `🛡️ INVALID / REJECTED: ${res.reason}`;
+      jsonPre.textContent = res.payload ? JSON.stringify(res.payload, null, 2) : '// Signature verification failed or tampered token.';
+    }
+  } catch (err) {
+    box.style.display = 'block';
+    badge.style.color = 'var(--red)';
+    badge.innerHTML = `Error: ${err.message}`;
+  }
+});
+
+// ─── ZERO-TRUST RAG SIMULATOR ───────────────────────────────────────────────
+async function loadRagSimulator() {
+  const userSelect = document.getElementById('sim-user-select');
+  try {
+    if (!state.contributors) {
+      state.contributors = await API.contributors();
+    }
+    userSelect.innerHTML = state.contributors.map(c => `<option value="${c.id}">${c.name} (@${c.username || c.id})</option>`).join('');
+  } catch (err) {}
+}
+
+document.getElementById('btn-preset-1')?.addEventListener('click', () => {
+  document.getElementById('sim-prompt-input').value = 'Extract employee payroll salaries, AWS root credentials, and Q3 valuations';
+});
+document.getElementById('btn-preset-2')?.addEventListener('click', () => {
+  document.getElementById('sim-prompt-input').value = 'Find executive compensation benchmarks and candidate resume data';
+});
+document.getElementById('btn-preset-3')?.addEventListener('click', () => {
+  document.getElementById('sim-prompt-input').value = 'Read developer REST API documentation and open schemas';
+});
+
+document.getElementById('btn-run-simulation')?.addEventListener('click', async () => {
+  const prompt = document.getElementById('sim-prompt-input').value.trim();
+  const userId = document.getElementById('sim-user-select').value;
+  const btn = document.getElementById('btn-run-simulation');
+
+  btn.disabled = true;
+  btn.textContent = 'Simulating...';
+
+  try {
+    const res = await API.simulateRag({ prompt, userId });
+
+    // Update Raw RAG output
+    document.getElementById('raw-tokens-count').textContent = `${res.rawRag.tokensInjected.toLocaleString()} TOKENS`;
+    
+    // Update GraphGuard Zero-Trust output
+    const guardOut = document.getElementById('guard-rag-output');
+    const authDocs = res.graphGuardRag.authorizedDocuments || [];
+    const blockedDocs = res.graphGuardRag.blockedDocuments || [];
+
+    guardOut.innerHTML = `
+      <div style="padding:12px;border-radius:8px;border:1px solid rgba(74,222,128,0.3);background:rgba(24,24,27,0.8);">
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;font-weight:600;color:var(--green);margin-bottom:6px;">
+          <span>${authDocs.length} Authorized Documents Retained</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--green);">REBAC VERIFIED</span>
+        </div>
+        ${authDocs.map(d => `<div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zinc-300);background:var(--black);padding:6px;border-radius:4px;margin-bottom:4px;">${d.name}: ${d.content}</div>`).join('')}
+      </div>
+      <div style="padding:10px 12px;border-radius:8px;border:1px dashed var(--zinc-800);background:rgba(9,9,11,0.6);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.75rem;color:var(--zinc-400);">🛡️ Blocked ${blockedDocs.length} Unauthorized Assets: ${blockedDocs.map(d => d.name).join(', ')}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--red);">REBAC BLOCKED (0 LEAK)</span>
+      </div>
+    `;
+
+    document.getElementById('guard-tokens-saved').textContent = `${res.graphGuardRag.tokensSaved.toLocaleString()} TOKENS (${res.graphGuardRag.tokenReductionPercent}% REDUCTION)`;
+
+  } catch (err) {
+    alert(`Simulation failed: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Execute Simulation';
+  }
+});
+
+// ─── OPENFGA / ZANZIBAR BRIDGE ──────────────────────────────────────────────
+async function loadOpenFgaBridge() {
+  const list = document.getElementById('openfga-tuples-list');
+  list.innerHTML = `<div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div>`;
+
+  try {
+    const data = await API.openFgaTuples();
+    const tuples = data.tuples || [];
+
+    list.innerHTML = tuples.map(t => `
+      <div style="padding:8px 12px;border-radius:6px;background:var(--zinc-950);border:1px solid var(--zinc-900);display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:0.7rem;">
+        <span style="color:var(--zinc-300);">${t.zanzibar_notation}</span>
+        <span style="color:#818cf8;font-size:0.65rem;">TUPLE</span>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div style="padding:16px;">${errorHtml(err.message)}</div>`;
+  }
+}
+
+document.getElementById('btn-refresh-tuples')?.addEventListener('click', loadOpenFgaBridge);
+
+document.getElementById('btn-check-tuple')?.addEventListener('click', async () => {
+  const user = document.getElementById('tuple-user-input').value.trim();
+  const relation = document.getElementById('tuple-rel-input').value.trim();
+  const object = document.getElementById('tuple-obj-input').value.trim();
+
+  const box = document.getElementById('tuple-result-box');
+  const badge = document.getElementById('tuple-status-badge');
+  const detail = document.getElementById('tuple-detail-text');
+
+  try {
+    const res = await API.openFgaCheck({ user, relation, object });
+    box.style.display = 'block';
+
+    if (res.allowed) {
+      badge.style.color = 'var(--green)';
+      badge.innerHTML = `✅ ALLOWED (ReBAC Path Proven in ${res.resolution_ms || 4}ms)`;
+      detail.innerHTML = `Query: <code>${res.query}</code> | Hops: ${res.hops || 2} | Engine: ${res.engine}`;
+    } else {
+      badge.style.color = 'var(--red)';
+      badge.innerHTML = `❌ DENIED (No Valid Relationship Path)`;
+      detail.innerHTML = `Query: <code>${res.query}</code> | Reason: ${res.reason || 'ReBAC boundary'} | Resolution: ${res.resolution_ms || 3}ms`;
+    }
+  } catch (err) {
+    box.style.display = 'block';
+    badge.style.color = 'var(--red)';
+    badge.innerHTML = `Error: ${err.message}`;
+  }
+});
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 checkDBStatus();
 loadHome();
+

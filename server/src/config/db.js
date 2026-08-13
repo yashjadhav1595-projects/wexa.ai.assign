@@ -29,6 +29,7 @@ async function verifyConnectivity() {
   try {
     await driver.verifyConnectivity();
     logger.info('Connected to CognoDB successfully.');
+    return true;
   } catch (error) {
     logger.error('Failed to connect to CognoDB', { error: error.message });
     throw error;
@@ -37,7 +38,6 @@ async function verifyConnectivity() {
 
 /**
  * Execute a read transaction with automatic retries for transient errors.
- * This is the industry-standard way to query Neo4j.
  */
 async function executeRead(cypher, params = {}) {
   if (!driver) {
@@ -46,6 +46,21 @@ async function executeRead(cypher, params = {}) {
   const session = driver.session({ database: 'neo4j' });
   try {
     return await session.executeRead(tx => tx.run(cypher, params));
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Execute a write transaction with automatic retries for transient errors.
+ */
+async function executeWrite(cypher, params = {}) {
+  if (!driver) {
+    throw new Error('Database driver is not initialized.');
+  }
+  const session = driver.session({ database: 'neo4j' });
+  try {
+    return await session.executeWrite(tx => tx.run(cypher, params));
   } finally {
     await session.close();
   }
@@ -61,5 +76,6 @@ module.exports = {
   driver,
   verifyConnectivity,
   executeRead,
+  executeWrite,
   closeDriver
 };

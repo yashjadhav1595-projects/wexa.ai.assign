@@ -1,5 +1,5 @@
 /**
- * TechPulse API Client
+ * GraphGuard AI API Client
  * All fetch calls go through here. Handles errors consistently.
  */
 
@@ -38,8 +38,39 @@ const API = {
 
   // Health
   health: () => API.get('/api/health'),
+  status: () => API.get('/api/status'),
 
   // Auth / ReBAC
   authAssets: () => API.get('/api/auth/assets'),
-  checkAccess: (user, asset) => API.get(`/api/auth/check-access?contributorId=${user}&assetId=${asset}`)
+  checkAccess: (user, asset, passport) => {
+    let url = `/api/auth/check-access?contributorId=${user}&assetId=${asset}`;
+    if (passport) url += `&passport=${encodeURIComponent(passport)}`;
+    return API.get(url);
+  },
+
+  // Agent OS & Ephemeral Passports
+  agentList: () => API.get('/api/agent/list'),
+  mintPassport: (data) => fetch('/api/agent/passport/mint', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(r => r.json()),
+  verifyPassport: (token) => fetch('/api/agent/passport/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  }).then(r => r.json()),
+  simulateRag: (data) => fetch('/api/agent/simulate-rag', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(r => r.json()),
+
+  // OpenFGA / Google Zanzibar
+  openFgaTuples: () => API.get('/api/bridge/openfga/tuples'),
+  openFgaCheck: (data) => fetch('/api/bridge/openfga/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(r => r.json())
 };

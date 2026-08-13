@@ -9,18 +9,22 @@ const GraphViz = (() => {
 
   const NODE_COLORS = {
     Contributor:  '#6366f1',
+    Agent:        '#a855f7',
     Project:      '#06b6d4',
     Organization: '#10b981',
     Technology:   '#f59e0b',
     Issue:        '#f43f5e',
+    DataAsset:    '#fb7185',
   };
 
   const NODE_RADIUS = {
     Contributor:  10,
+    Agent:        12,
     Project:      13,
     Organization: 15,
     Technology:   9,
     Issue:        8,
+    DataAsset:    11,
   };
 
   function init(containerId) {

@@ -9,6 +9,8 @@ const organizationService = require('../services/organizationService');
 const graphService = require('../services/graphService');
 const authService = require('../services/authService');
 const agentService = require('../services/agentService');
+const agentPassportService = require('../services/agentPassportService');
+const openFgaBridgeService = require('../services/openFgaBridge');
 const auditService = require('../services/auditService');
 const { ingestGraph } = require('../../seed/githubIngest');
 
@@ -81,13 +83,65 @@ router.post('/test/webhook', asyncHandler(async (req, res) => {
   res.json({ success: true, simulatedEvent: event, result });
 }));
 
-// --- AI Agent OS ---
+// --- Autonomous AI Agent Identity & Passport OS ---
+router.get('/agent/list', asyncHandler(async (req, res) => {
+  const agents = await agentPassportService.listAgents();
+  res.json({ agents, total: agents.length });
+}));
+
+router.post('/agent/passport/mint', asyncHandler(async (req, res) => {
+  const { agentId, delegatedBy, task, ttlMinutes, allowedScopes, maxHops } = req.body;
+  if (!agentId || !delegatedBy) {
+    return res.status(400).json({ error: true, message: 'Provide agentId and delegatedBy' });
+  }
+
+  const passport = await agentPassportService.mintPassport({
+    agentId,
+    delegatedBy,
+    task: task || 'General contextual search and execution',
+    ttlMinutes: ttlMinutes || 60,
+    allowedScopes: allowedScopes || ['Internal', 'Confidential'],
+    maxHops: maxHops || 2
+  });
+
+  res.json({ success: true, passport });
+}));
+
+router.post('/agent/passport/verify', asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: true, message: 'Provide passport token in body' });
+  const verification = agentPassportService.verifyPassport(token);
+  res.json(verification);
+}));
+
+router.post('/agent/simulate-rag', asyncHandler(async (req, res) => {
+  const { prompt, userId, agentId } = req.body;
+  const result = await agentService.simulateRagComparison({
+    prompt: prompt || 'Show me internal executive compensation & master DB credentials',
+    userId: userId || 'c-1',
+    agentId: agentId || 'agent-fin-auditor'
+  });
+  res.json(result);
+}));
+
 router.post('/agent/query', asyncHandler(async (req, res) => {
-  const { userId, query } = req.body;
+  const { userId, query, passport } = req.body;
   if (!userId) return res.status(400).json({ error: true, message: 'userId is required for ReBAC verification.' });
-  const context = await agentService.getSecureContext(userId, query);
+  const context = await agentService.getSecureContext(userId, query, passport);
   if (context.status === 'denied') return res.status(403).json(context);
   res.json(context);
+}));
+
+// --- OpenFGA / Google Zanzibar Bridge ---
+router.get('/bridge/openfga/tuples', asyncHandler(async (req, res) => {
+  const tuples = await openFgaBridgeService.exportZanzibarTuples();
+  res.json({ tuples, count: tuples.length, specification: 'Google Zanzibar / OpenFGA 1.0' });
+}));
+
+router.post('/bridge/openfga/check', asyncHandler(async (req, res) => {
+  const { user, relation, object } = req.body;
+  const result = await openFgaBridgeService.checkTuple({ user, relation, object });
+  res.json(result);
 }));
 
 // --- Admin ---

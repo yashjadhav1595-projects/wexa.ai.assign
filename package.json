@@ -1,13 +1,14 @@
 {
-  "name": "techpulse",
+  "name": "graphguard-ai",
   "version": "1.0.0",
-  "description": "Developer Ecosystem Intelligence Graph powered by CognoDB",
+  "description": "The Zero-Trust Operating System for Enterprise AI Agents & ReBAC Knowledge Graphs",
   "main": "server/src/server.js",
   "scripts": {
     "start": "node server/src/server.js",
     "dev": "nodemon server/src/server.js",
     "seed": "node server/seed/seed.js",
-    "test:webhook-sync": "node server/src/scripts/testWebhookSync.js"
+    "test:webhook-sync": "node server/src/scripts/testWebhookSync.js",
+    "test:agent-governance": "node server/src/scripts/testAgentGovernance.js"
   },
   "dependencies": {
     "@octokit/auth-app": "^8.3.0",

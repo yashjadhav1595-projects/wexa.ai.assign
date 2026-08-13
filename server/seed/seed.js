@@ -1,18 +1,21 @@
 /**
- * TechPulse — Graph Data Model:
+ * GraphGuard AI — Enterprise Zero-Trust Graph Data Model:
  *
  * Nodes:
- *   (:Contributor {id, name, username, email, location, bio, followers, avatarColor})
- *   (:Project     {id, name, description, stars, forks, language, license, createdYear})
- *   (:Organization{id, name, type, country, founded, description})
- *   (:Technology  {id, name, category, description})
- *   (:Issue       {id, title, type, severity, status, createdAt})
- *   (:DataAsset   {id, name, classification, sensitivity, description})
+ *   (:Contributor  {id, name, username, email, location, bio, followers, avatarColor})
+ *   (:Agent        {id, name, type, framework, department, maxHops, permittedScopes, status})
+ *   (:Project      {id, name, description, stars, forks, language, license, createdYear})
+ *   (:Organization {id, name, type, country, founded, description})
+ *   (:Technology   {id, name, category, description})
+ *   (:Issue        {id, title, type, severity, status, createdAt})
+ *   (:DataAsset    {id, name, classification, sensitivity, description})
  *
  * Relationships:
  *   (Contributor)-[:CONTRIBUTED_TO {commits, role}]->(Project)
  *   (Contributor)-[:WORKS_AT {since, role}]->(Organization)
+ *   (Contributor)-[:DELEGATED_TASK {task, maxHops}]->(Agent)
  *   (Contributor)-[:AUTHORED]->(Issue)
+ *   (Agent)-[:PERMITTED_SCOPE]->(DataAsset)
  *   (Project)-[:DEPENDS_ON {version, type}]->(Project)
  *   (Project)-[:USES_TECHNOLOGY]->(Technology)
  *   (Organization)-[:SPONSORS {amount, since}]->(Project)
@@ -82,6 +85,49 @@ const contributors = [
   { id: 'c-15', name: 'Valentina Cruz', username: 'valcruz', email: 'valentina@example.com', location: 'Buenos Aires', bio: 'Open source sustainability and governance', followers: 5100, avatarColor: '#f43f5e' },
 ];
 
+const agents = [
+  {
+    id: 'agent-fin-auditor',
+    name: 'Finance & Invoice Auditor Agent',
+    type: 'Autonomous Worker',
+    framework: 'LangChain',
+    department: 'Finance',
+    maxHops: 2,
+    permittedScopes: ['Internal', 'Restricted:Finance'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'agent-code-reviewer',
+    name: 'PR Code Security Sentinel',
+    type: 'Copilot',
+    framework: 'LlamaIndex',
+    department: 'Engineering',
+    maxHops: 3,
+    permittedScopes: ['Internal', 'Confidential:Code'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'agent-hr-onboarding',
+    name: 'Talent & HR Assistant',
+    type: 'Autonomous Worker',
+    framework: 'CrewAI',
+    department: 'Human Resources',
+    maxHops: 1,
+    permittedScopes: ['Internal', 'Confidential:HR'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'agent-devops-sentinel',
+    name: 'Infrastructure & SRE Bot',
+    type: 'Autonomous Worker',
+    framework: 'AutoGen',
+    department: 'Platform Engineering',
+    maxHops: 2,
+    permittedScopes: ['Internal', 'Restricted:Infrastructure'],
+    status: 'ONLINE'
+  }
+];
+
 const projects = [
   { id: 'p-1', name: 'Nexus Core', description: 'High-performance distributed message broker written in Rust', stars: 18400, forks: 2100, language: 'Rust', license: 'Apache-2.0', createdYear: 2019 },
   { id: 'p-2', name: 'FlowKit', description: 'React-based workflow builder with GraphQL API', stars: 9200, forks: 1400, language: 'TypeScript', license: 'MIT', createdYear: 2020 },
@@ -114,8 +160,9 @@ const dataAssets = [
   { id: 'da-1', name: 'Production DB Credentials', classification: 'Restricted', sensitivity: 'High', description: 'Master database passwords' },
   { id: 'da-2', name: 'AWS Root Keys', classification: 'Restricted', sensitivity: 'Critical', description: 'Root AWS access keys' },
   { id: 'da-3', name: 'Staging API Keys', classification: 'Internal', sensitivity: 'Medium', description: 'API keys for staging environments' },
-  { id: 'da-4', name: 'Customer PII Dataset', classification: 'Confidential', sensitivity: 'High', description: 'Anonymized customer data for ML training' },
-  { id: 'da-5', name: 'Code Signing Certificates', classification: 'Restricted', sensitivity: 'Critical', description: 'Certificates for releasing binaries' },
+  { id: 'da-4', name: 'Customer PII & Salary Ledger', classification: 'Confidential', sensitivity: 'High', description: 'Anonymized customer data and executive salary bands' },
+  { id: 'da-5', name: 'Code Signing Certificates', classification: 'Restricted', sensitivity: 'Critical', description: 'Certificates for releasing production binaries' },
+  { id: 'da-6', name: 'M&A Acquisition Deck 2026', classification: 'Confidential', sensitivity: 'Critical', description: 'Board confidential merger and valuation deck' },
 ];
 
 // ─── Relationships ────────────────────────────────────────────────────────────
@@ -173,6 +220,19 @@ const worksAt = [
   { contributor: 'c-15', org: 'org-6', since: 2021, role: 'Community Manager' },
 ];
 
+const agentDelegations = [
+  { user: 'c-1', agent: 'agent-fin-auditor', task: 'Audit Meta Cloud Invoices', maxHops: 2 },
+  { user: 'c-4', agent: 'agent-code-reviewer', task: 'Scan FlowKit Pull Requests', maxHops: 3 },
+  { user: 'c-6', agent: 'agent-hr-onboarding', task: 'Process Candidate Resumes', maxHops: 1 },
+  { user: 'c-5', agent: 'agent-devops-sentinel', task: 'Rotate KubeFlux Secrets', maxHops: 2 },
+];
+
+const agentScopes = [
+  { agent: 'agent-fin-auditor', asset: 'da-4' },
+  { agent: 'agent-code-reviewer', asset: 'da-3' },
+  { agent: 'agent-devops-sentinel', asset: 'da-1' },
+];
+
 const dependsOn = [
   { from: 'p-2', to: 'p-8', version: '2.1.0', type: 'runtime' },
   { from: 'p-3', to: 'p-9', version: '1.4.2', type: 'runtime' },
@@ -188,33 +248,33 @@ const dependsOn = [
 ];
 
 const usesTechnology = [
-  { project: 'p-1', tech: 'tech-2' }, // Nexus Core → Rust
-  { project: 'p-1', tech: 'tech-9' }, // Nexus Core → gRPC
-  { project: 'p-2', tech: 'tech-1' }, // FlowKit → TypeScript
-  { project: 'p-2', tech: 'tech-5' }, // FlowKit → React
-  { project: 'p-2', tech: 'tech-8' }, // FlowKit → GraphQL
-  { project: 'p-3', tech: 'tech-3' }, // KubeFlux → Go
-  { project: 'p-3', tech: 'tech-6' }, // KubeFlux → Kubernetes
-  { project: 'p-4', tech: 'tech-3' }, // TerraForge → Go
-  { project: 'p-4', tech: 'tech-10' },// TerraForge → Terraform
-  { project: 'p-5', tech: 'tech-2' }, // EdgeRuntime → Rust
-  { project: 'p-5', tech: 'tech-7' }, // EdgeRuntime → WebAssembly
-  { project: 'p-6', tech: 'tech-4' }, // PyMLOps → Python
-  { project: 'p-6', tech: 'tech-6' }, // PyMLOps → Kubernetes
-  { project: 'p-7', tech: 'tech-3' }, // SecureVault → Go
-  { project: 'p-7', tech: 'tech-11' },// SecureVault → Docker
-  { project: 'p-8', tech: 'tech-1' }, // DataStream → TypeScript
-  { project: 'p-8', tech: 'tech-9' }, // DataStream → gRPC
-  { project: 'p-8', tech: 'tech-12' },// DataStream → Node.js
-  { project: 'p-9', tech: 'tech-3' }, // CloudMesh → Go
-  { project: 'p-9', tech: 'tech-6' }, // CloudMesh → Kubernetes
-  { project: 'p-9', tech: 'tech-11' },// CloudMesh → Docker
-  { project: 'p-10', tech: 'tech-1' },// LangTool → TypeScript
-  { project: 'p-10', tech: 'tech-12' },// LangTool → Node.js
-  { project: 'p-11', tech: 'tech-2' }, // GraphSync → Rust
-  { project: 'p-11', tech: 'tech-9' }, // GraphSync → gRPC
-  { project: 'p-12', tech: 'tech-2' }, // WasmEdge → Rust
-  { project: 'p-12', tech: 'tech-7' }, // WasmEdge → WebAssembly
+  { project: 'p-1', tech: 'tech-2' },
+  { project: 'p-1', tech: 'tech-9' },
+  { project: 'p-2', tech: 'tech-1' },
+  { project: 'p-2', tech: 'tech-5' },
+  { project: 'p-2', tech: 'tech-8' },
+  { project: 'p-3', tech: 'tech-3' },
+  { project: 'p-3', tech: 'tech-6' },
+  { project: 'p-4', tech: 'tech-3' },
+  { project: 'p-4', tech: 'tech-10' },
+  { project: 'p-5', tech: 'tech-2' },
+  { project: 'p-5', tech: 'tech-7' },
+  { project: 'p-6', tech: 'tech-4' },
+  { project: 'p-6', tech: 'tech-6' },
+  { project: 'p-7', tech: 'tech-3' },
+  { project: 'p-7', tech: 'tech-11' },
+  { project: 'p-8', tech: 'tech-1' },
+  { project: 'p-8', tech: 'tech-9' },
+  { project: 'p-8', tech: 'tech-12' },
+  { project: 'p-9', tech: 'tech-3' },
+  { project: 'p-9', tech: 'tech-6' },
+  { project: 'p-9', tech: 'tech-11' },
+  { project: 'p-10', tech: 'tech-1' },
+  { project: 'p-10', tech: 'tech-12' },
+  { project: 'p-11', tech: 'tech-2' },
+  { project: 'p-11', tech: 'tech-9' },
+  { project: 'p-12', tech: 'tech-2' },
+  { project: 'p-12', tech: 'tech-7' },
 ];
 
 const sponsors = [
@@ -279,7 +339,8 @@ const authored = [
 
 const ownsAsset = [
   { org: 'org-1', asset: 'da-1' }, // Google owns Prod DB Creds
-  { org: 'org-2', asset: 'da-4' }, // Meta owns Customer PII
+  { org: 'org-2', asset: 'da-4' }, // Meta owns Customer PII & Salary Ledger
+  { org: 'org-2', asset: 'da-6' }, // Meta owns M&A Acquisition Deck
   { org: 'org-4', asset: 'da-2' }, // Vercel owns AWS Root Keys
   { org: 'org-5', asset: 'da-5' }, // HashiCorp owns Code Signing Certs
   { org: 'org-7', asset: 'da-3' }, // Linux Foundation owns Staging API Keys
@@ -305,6 +366,7 @@ async function createConstraints(session) {
   console.log('[Seed] Creating constraints and indexes...');
   const constraints = [
     'CREATE CONSTRAINT IF NOT EXISTS FOR (c:Contributor) REQUIRE c.id IS UNIQUE',
+    'CREATE CONSTRAINT IF NOT EXISTS FOR (a:Agent) REQUIRE a.id IS UNIQUE',
     'CREATE CONSTRAINT IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE',
     'CREATE CONSTRAINT IF NOT EXISTS FOR (o:Organization) REQUIRE o.id IS UNIQUE',
     'CREATE CONSTRAINT IF NOT EXISTS FOR (t:Technology) REQUIRE t.id IS UNIQUE',
@@ -343,6 +405,14 @@ async function seedNodes(session) {
     );
   }
   console.log(`  ✓ ${contributors.length} contributors`);
+
+  for (const a of agents) {
+    await session.run(
+      `CREATE (a:Agent {id: $id, name: $name, type: $type, framework: $framework, department: $department, maxHops: $maxHops, permittedScopes: $permittedScopes, status: $status})`,
+      a
+    );
+  }
+  console.log(`  ✓ ${agents.length} autonomous AI agents`);
 
   for (const p of projects) {
     await session.run(
@@ -389,6 +459,24 @@ async function seedRelationships(session) {
     );
   }
   console.log(`  ✓ ${worksAt.length} WORKS_AT`);
+
+  for (const rel of agentDelegations) {
+    await session.run(
+      `MATCH (u:Contributor {id: $user}), (a:Agent {id: $agent})
+       CREATE (u)-[:DELEGATED_TASK {task: $task, maxHops: $maxHops}]->(a)`,
+      rel
+    );
+  }
+  console.log(`  ✓ ${agentDelegations.length} DELEGATED_TASK (User -> Agent)`);
+
+  for (const rel of agentScopes) {
+    await session.run(
+      `MATCH (a:Agent {id: $agent}), (d:DataAsset {id: $asset})
+       CREATE (a)-[:PERMITTED_SCOPE]->(d)`,
+      rel
+    );
+  }
+  console.log(`  ✓ ${agentScopes.length} PERMITTED_SCOPE (Agent -> DataAsset)`);
 
   for (const rel of dependsOn) {
     await session.run(
@@ -466,17 +554,17 @@ async function seedRelationships(session) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('[Seed] Starting TechPulse database seed...');
+  console.log('[Seed] Starting GraphGuard AI enterprise database seed...');
   const session = driver.session({ database: 'neo4j' });
   try {
     await clearDatabase(session);
     await createConstraints(session);
     await seedNodes(session);
     await seedRelationships(session);
-    console.log('\n[Seed] ✅ Seeding complete! TechPulse graph is ready.');
+    console.log('\n[Seed] ✅ Seeding complete! GraphGuard Zero-Trust graph is ready.');
     console.log('[Seed] Summary:');
-    console.log(`  Nodes: ${organizations.length + technologies.length + contributors.length + projects.length + issues.length + dataAssets.length}`);
-    const totalRels = contributesTo.length + worksAt.length + dependsOn.length + usesTechnology.length + sponsors.length + partOf.length + follows.length + authored.length + ownsAsset.length + hasAccessTo.length;
+    console.log(`  Nodes: ${organizations.length + technologies.length + contributors.length + agents.length + projects.length + issues.length + dataAssets.length}`);
+    const totalRels = contributesTo.length + worksAt.length + agentDelegations.length + agentScopes.length + dependsOn.length + usesTechnology.length + sponsors.length + partOf.length + follows.length + authored.length + ownsAsset.length + hasAccessTo.length;
     console.log(`  Relationships: ${totalRels}`);
   } catch (err) {
     console.error('[Seed] ERROR:', err.message);
