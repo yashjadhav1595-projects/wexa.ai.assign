@@ -1,39 +1,51 @@
 const { executeRead } = require('../config/db');
 const { parseNeo4jNumber, parseNodeProperties } = require('../utils/neo4jUtils');
 const logger = require('../utils/logger');
+let cache = null;
+try { cache = require('../config/queryCache.json'); } catch(e) {}
 
 class GraphService {
   async getStats() {
-    const cypher = `
-      CALL { MATCH (n) RETURN count(n) AS nodeCount }
-      CALL { MATCH ()-[r]->() RETURN count(r) AS relCount }
-      CALL { MATCH (c:Contributor) RETURN count(c) AS contributors }
-      CALL { MATCH (p:Project) RETURN count(p) AS projects }
-      CALL { MATCH (o:Organization) RETURN count(o) AS orgs }
-      CALL { MATCH (t:Technology) RETURN count(t) AS technologies }
-      RETURN nodeCount, relCount, contributors, projects, orgs, technologies
-    `;
-    const result = await executeRead(cypher);
-    const r = result.records[0];
-    return {
-      nodes: parseNeo4jNumber(r.get('nodeCount')),
-      relationships: parseNeo4jNumber(r.get('relCount')),
-      contributors: parseNeo4jNumber(r.get('contributors')),
-      projects: parseNeo4jNumber(r.get('projects')),
-      organizations: parseNeo4jNumber(r.get('orgs')),
-      technologies: parseNeo4jNumber(r.get('technologies')),
-    };
+    try {
+      const cypher = `
+        CALL { MATCH (n) RETURN count(n) AS nodeCount }
+        CALL { MATCH ()-[r]->() RETURN count(r) AS relCount }
+        CALL { MATCH (c:Contributor) RETURN count(c) AS contributors }
+        CALL { MATCH (p:Project) RETURN count(p) AS projects }
+        CALL { MATCH (o:Organization) RETURN count(o) AS orgs }
+        CALL { MATCH (t:Technology) RETURN count(t) AS technologies }
+        RETURN nodeCount, relCount, contributors, projects, orgs, technologies
+      `;
+      const result = await executeRead(cypher);
+      const r = result.records[0];
+      return {
+        nodes: parseNeo4jNumber(r.get('nodeCount')),
+        relationships: parseNeo4jNumber(r.get('relCount')),
+        contributors: parseNeo4jNumber(r.get('contributors')),
+        projects: parseNeo4jNumber(r.get('projects')),
+        organizations: parseNeo4jNumber(r.get('orgs')),
+        technologies: parseNeo4jNumber(r.get('technologies')),
+      };
+    } catch (err) {
+      if (cache && cache.stats) return cache.stats;
+      throw err;
+    }
   }
 
   async getOverview() {
-    const cypher = `
-      MATCH (n)
-      OPTIONAL MATCH (n)-[r]->(m)
-      RETURN n, r, m
-      LIMIT 500
-    `;
-    const result = await executeRead(cypher);
-    return this._formatGraphResult(result);
+    try {
+      const cypher = `
+        MATCH (n)
+        OPTIONAL MATCH (n)-[r]->(m)
+        RETURN n, r, m
+        LIMIT 500
+      `;
+      const result = await executeRead(cypher);
+      return this._formatGraphResult(result);
+    } catch (err) {
+      if (cache && cache.overview) return cache.overview;
+      throw err;
+    }
   }
 
   async getCollaborationNetwork(contributorId) {
