@@ -6,21 +6,17 @@ const URI = process.env.COGNODB_URI;
 const USER = process.env.COGNODB_USER || 'cognodb';
 const PASSWORD = process.env.COGNODB_PASSWORD;
 
-let driver = null;
-
 if (!URI || !PASSWORD) {
-  logger.warn('[CognoDB] COGNODB_URI and COGNODB_PASSWORD not configured. Graph operations will run in mock/standby mode.');
-} else {
-  try {
-    driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD), {
+  logger.error('CRITICAL: COGNODB_URI and COGNODB_PASSWORD must be configured in .env for live graph database operations.');
+}
+
+const driver = (URI && PASSWORD)
+  ? neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD), {
       maxConnectionPoolSize: 50,
       connectionAcquisitionTimeout: 10000,
       connectionTimeout: 10000,
-    });
-  } catch (err) {
-    logger.error('Failed to initialize Neo4j driver:', err.message);
-  }
-}
+    })
+  : null;
 
 async function verifyConnectivity() {
   if (!driver) {

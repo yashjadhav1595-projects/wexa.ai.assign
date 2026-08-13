@@ -1,14 +1,10 @@
-const { executeRead, driver } = require('../config/db');
-const { mockAssets } = require('../utils/mockGraphData');
+const { executeRead } = require('../config/db');
 const logger = require('../utils/logger');
 
 /**
- * Get all Data Assets for the UI dropdown
+ * Get all Data Assets for the UI dropdown from live CognoDB
  */
 const getAllAssets = async () => {
-  if (!driver) {
-    return mockAssets;
-  }
   try {
     const query = `
       MATCH (d:DataAsset)
@@ -28,45 +24,16 @@ const getAllAssets = async () => {
       };
     });
   } catch (error) {
-    logger.warn(`[AuthService] DB error in getAllAssets: ${error.message}. Falling back to mock assets.`);
-    return mockAssets;
+    logger.error('Error in getAllAssets', { error: error.message });
+    throw error;
   }
 };
 
 /**
  * Check Relationship-Based Access Control (ReBAC)
- * Evaluates if a Contributor has access to a Data Asset based on their graph relationships.
+ * Evaluates if a Contributor has access to a Data Asset based on live graph relationships.
  */
-const checkAccess = async (contributorId, assetId) => {
-  if (!driver) {
-    // Determine access based on mock relationships
-    // Eliza Vance (Cyberdyne) -> Cyberdyne assets (GRANTED)
-    // Devon Lee (VendorCorp) -> Cyberdyne assets (DENIED)
-    const isCyberdyneUser = contributorId.includes('eliza') || contributorId.includes('sarah') || contributorId.includes('alex');
-    const isPublicAsset = assetId.includes('public');
-    const isCyberdyneAsset = assetId.includes('fin') || assetId.includes('sec') || assetId.includes('hr');
-
-    if (isPublicAsset || (isCyberdyneUser && isCyberdyneAsset)) {
-      return {
-        granted: true,
-        reason: "Access granted based on organizational/project relationships.",
-        path: [
-          { type: 'node', label: 'Contributor', name: contributorId },
-          { type: 'relationship', label: 'WORKS_AT' },
-          { type: 'node', label: 'Organization', name: 'Cyberdyne Systems' },
-          { type: 'relationship', label: 'OWNS_ASSET' },
-          { type: 'node', label: 'DataAsset', name: assetId }
-        ]
-      };
-    } else {
-      return {
-        granted: false,
-        reason: "No authorized relationship path found between the user and the asset (ReBAC boundary enforced).",
-        path: null
-      };
-    }
-  }
-
+const checkAccess = async (contributorId, assetId, passportToken = null) => {
   try {
     const query = `
       MATCH (c:Contributor {id: $contributorId})
@@ -91,7 +58,7 @@ const checkAccess = async (contributorId, assetId) => {
     if (result.records.length === 0) {
       return {
         granted: false,
-        reason: "No authorized relationship path found between the user and the asset.",
+        reason: "No authorized relationship path found between the identity and the asset in the Knowledge Graph.",
         path: null
       };
     }
@@ -116,7 +83,7 @@ const checkAccess = async (contributorId, assetId) => {
     
     return {
       granted: true,
-      reason: "Access granted based on organizational/project relationships.",
+      reason: "Access granted based on live organizational/project graph relationships.",
       path: formattedPath
     };
   } catch (error) {
