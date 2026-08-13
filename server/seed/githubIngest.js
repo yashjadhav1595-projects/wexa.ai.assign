@@ -7,22 +7,10 @@
  */
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
-const neo4j = require('neo4j-driver');
+const { driver } = require('../src/config/db');
 const https = require('https');
 
-let driver = null;
-
 function getDriver() {
-  if (driver) return driver;
-  const URI = process.env.COGNODB_URI;
-  const USER = process.env.COGNODB_USER || 'cognodb';
-  const PASSWORD = process.env.COGNODB_PASSWORD;
-
-  if (!URI || !PASSWORD) {
-    throw new Error('[Ingest] ERROR: Set COGNODB_URI and COGNODB_PASSWORD in your .env file.');
-  }
-
-  driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));
   return driver;
 }
 
