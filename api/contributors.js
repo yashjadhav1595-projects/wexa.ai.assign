@@ -1,4 +1,5 @@
 const contributorService = require('../server/src/services/contributorService');
+const cache = require('../server/src/config/queryCache');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,9 +11,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const list = await contributorService.getAllContributors();
-    return res.status(200).json(list);
+    const contributors = await contributorService.getAllContributors();
+    return res.status(200).json(contributors);
   } catch (err) {
+    if (cache && cache.contributors) {
+      return res.status(200).json(cache.contributors);
+    }
     return res.status(500).json({ error: true, message: err.message });
   }
 };

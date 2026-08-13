@@ -1,4 +1,5 @@
 const projectService = require('../server/src/services/projectService');
+const cache = require('../server/src/config/queryCache');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,9 +11,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const list = await projectService.getAllProjects();
-    return res.status(200).json(list);
+    const projects = await projectService.getAllProjects();
+    return res.status(200).json(projects);
   } catch (err) {
+    if (cache && cache.projects) {
+      return res.status(200).json(cache.projects);
+    }
     return res.status(500).json({ error: true, message: err.message });
   }
 };

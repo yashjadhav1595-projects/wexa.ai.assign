@@ -1,4 +1,5 @@
 const agentPassportService = require('../../server/src/services/agentPassportService');
+const cache = require('../../server/src/config/queryCache');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,8 +12,11 @@ module.exports = async (req, res) => {
 
   try {
     const agents = await agentPassportService.listAgents();
-    return res.status(200).json({ agents, total: agents.length });
+    return res.status(200).json(agents);
   } catch (err) {
+    if (cache && cache.agents) {
+      return res.status(200).json(cache.agents);
+    }
     return res.status(500).json({ error: true, message: err.message });
   }
 };

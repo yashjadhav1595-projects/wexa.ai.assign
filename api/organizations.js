@@ -1,4 +1,5 @@
 const organizationService = require('../server/src/services/organizationService');
+const cache = require('../server/src/config/queryCache');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,9 +11,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const list = await organizationService.getAllOrganizations();
-    return res.status(200).json(list);
+    const orgs = await organizationService.getAllOrganizations();
+    return res.status(200).json(orgs);
   } catch (err) {
+    if (cache && cache.organizations) {
+      return res.status(200).json(cache.organizations);
+    }
     return res.status(500).json({ error: true, message: err.message });
   }
 };

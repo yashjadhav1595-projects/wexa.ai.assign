@@ -1,4 +1,5 @@
 const graphService = require('../../server/src/services/graphService');
+const cache = require('../../server/src/config/queryCache');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +14,9 @@ module.exports = async (req, res) => {
     const stats = await graphService.getStats();
     return res.status(200).json(stats);
   } catch (err) {
+    if (cache && cache.stats) {
+      return res.status(200).json(cache.stats);
+    }
     return res.status(500).json({ error: true, message: err.message });
   }
 };
