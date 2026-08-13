@@ -9,22 +9,16 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
-// Normalize URL for Vercel Serverless routing
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api/')) {
-    req.url = req.url.substring(4); // transforms /api/health -> /health
-  } else if (req.url === '/api') {
-    req.url = '/';
-  }
-  next();
-});
-
-// Mount all API routes
+// Support both /api/... and direct route requests
+app.use('/api', apiRoutes);
 app.use('/', apiRoutes);
 
-// Fallback 404 handler so serverless function never hangs
+// Fallback 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: true, message: `Route not found on Vercel: ${req.method} ${req.originalUrl || req.url}` });
+  res.status(404).json({
+    error: true,
+    message: `Route not found: ${req.method} ${req.originalUrl || req.url}`
+  });
 });
 
 // Global Error Handler
