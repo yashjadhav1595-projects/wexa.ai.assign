@@ -119,7 +119,27 @@ async function checkDBStatus() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatNum(n) { return Number(n).toLocaleString(); }
 function emptyHtml(msg = 'No results') { return `<div class="empty-state">${msg}</div>`; }
-function errorHtml(msg) { return `<div class="error-banner">⚠ ${msg}</div>`; }
+function errorHtml(msg) { 
+  if (msg && msg.includes('FIREWALL_BLOCK')) {
+    return `<div class="error-banner" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 8px; text-align: left;">
+      <div style="font-weight: 600; color: #ef4444; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        Database Firewall Block Detected
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        CognoDB Cloud is actively rejecting TCP connections from this server's IP address (Vercel).<br><br>
+        <strong>How to fix:</strong><br>
+        1. Run this application locally (<code>npm run dev</code>) so it connects using your home IP address.<br>
+        2. If supported, add Vercel's IP address to the IP Allowlist in the CognoDB Cloud console.
+      </div>
+      <details style="margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);">
+        <summary style="cursor: pointer; opacity: 0.8;">Show raw error</summary>
+        <div style="margin-top: 8px; font-family: monospace; opacity: 0.7; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">${msg}</div>
+      </details>
+    </div>`;
+  }
+  return `<div class="error-banner">⚠ ${msg}</div>`; 
+}
 function avatarHtml(c, size = 32) {
   const initials = (c.name || '').substring(0, 2).toUpperCase();
   return `<div class="avatar-sm" style="width:${size}px;height:${size}px;font-size:${size*0.4}px">${initials}</div>`;

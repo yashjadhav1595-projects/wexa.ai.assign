@@ -28,6 +28,12 @@ async function verifyConnectivity() {
     return true;
   } catch (error) {
     logger.error('Failed to connect to CognoDB', { error: error.message });
+    
+    // Add firewall block context for Vercel/Cloud IPs receiving ECONNRESET
+    if (error.message && error.message.includes('ECONNRESET')) {
+      error.message = 'FIREWALL_BLOCK: CognoDB Cloud is actively dropping TCP connections from this IP address (Vercel/Cloud). Please run locally (localhost:3000) or check CognoDB IP Allowlist settings. Original Error: ' + error.message;
+    }
+    
     throw error;
   }
 }
@@ -42,6 +48,11 @@ async function executeRead(cypher, params = {}) {
   const session = driver.session({ database: 'neo4j' });
   try {
     return await session.executeRead(tx => tx.run(cypher, params));
+  } catch (error) {
+    if (error.message && error.message.includes('ECONNRESET')) {
+      error.message = 'FIREWALL_BLOCK: CognoDB Cloud is actively dropping TCP connections from this IP address (Vercel/Cloud). Please run locally (localhost:3000) or check CognoDB IP Allowlist settings. Original Error: ' + error.message;
+    }
+    throw error;
   } finally {
     await session.close();
   }
@@ -57,6 +68,11 @@ async function executeWrite(cypher, params = {}) {
   const session = driver.session({ database: 'neo4j' });
   try {
     return await session.executeWrite(tx => tx.run(cypher, params));
+  } catch (error) {
+    if (error.message && error.message.includes('ECONNRESET')) {
+      error.message = 'FIREWALL_BLOCK: CognoDB Cloud is actively dropping TCP connections from this IP address (Vercel/Cloud). Please run locally (localhost:3000) or check CognoDB IP Allowlist settings. Original Error: ' + error.message;
+    }
+    throw error;
   } finally {
     await session.close();
   }
