@@ -241,17 +241,17 @@
 
     <!-- Hero -->
     <div class="hero">
-      <h1>The Secure Context<br>Engine for AI.</h1>
-      <p class="hero-desc">Vector databases lack structural access control. We intercept agent queries, mathematically prove user permissions via Neo4j ReBAC, and deliver secure context to your LLM.</p>
+      <h1>The Zero-Trust Agent<br>Operating System.</h1>
+      <p class="hero-desc">Traditional RBAC breaks down in AI workflows. We provide cryptographic ReBAC, real-time graph traversal authorization, and autonomous agent identity governance to ensure zero data leaks.</p>
       <div class="hero-btns">
         <a href="/dashboard" class="btn-primary">Deploy Gateway</a>
         <a href="#how-it-works" class="btn-outline">How it works</a>
       </div>
 
       <div class="terminal">
-        <div>➜ curl -X POST https://api.graphguard.ai/v1/context \</div>
-        <div style="margin-left:20px;margin-bottom:16px;">-d '{"agent": "sales-bot", "query": "Q3 Revenue"}'</div>
-        <div><span class="hl">[GraphGuard]</span> Resolving clearance for agent: sales-bot</div>
+        <div>➜ curl -X POST https://api.graphguard.ai/v1/agent/passport/mint \</div>
+        <div style="margin-left:20px;margin-bottom:16px;">-d '{"agent": "sales-bot", "scope": ["read:q3_revenue"]}'</div>
+        <div><span class="hl">[GraphGuard]</span> Minting ephemeral Zero-Trust passport...</div>
         <div><span class="hl">[GraphGuard]</span> Graph ReBAC traversal complete (4ms).</div>
         <div class="dim">[Security] 2 Data Assets blocked (Missing clearance).</div>
         <div><span class="hl">[Gateway]</span> Secure Context Packet forwarded to LLM.</div>
@@ -268,29 +268,29 @@
         <div class="flow-step">
           <div class="step-num">01</div>
           <div class="step-content">
-            <h3>Frontend Interception</h3>
-            <p>The user issues a prompt to the AI agent via your frontend interface. Instead of routing directly to a vector database, the request is intercepted by the GraphGuard API Gateway, appending the user's identity token.</p>
+            <h3>Agent Passport Minting</h3>
+            <p>Before an autonomous AI worker begins a task, it requests an ephemeral Passport from the Agent OS. The passport cryptographically binds the agent's identity to a strict, time-bound scope.</p>
           </div>
         </div>
         <div class="flow-step">
           <div class="step-num">02</div>
           <div class="step-content">
-            <h3>Backend Traversal (Neo4j ReBAC)</h3>
-            <p>The Node.js backend receives the query and executes a highly optimized Cypher traversal against your Neo4j graph. It mathematically calculates the relationship paths between the User Node and all relevant Data Nodes.</p>
+            <h3>Graph ReBAC Traversal</h3>
+            <p>The backend executes a highly optimized Cypher traversal against your Neo4j Knowledge Graph to mathematically calculate relationship paths between the Agent and all relevant Data Assets.</p>
           </div>
         </div>
         <div class="flow-step">
           <div class="step-num">03</div>
           <div class="step-content">
-            <h3>Context Pruning &amp; Audit</h3>
-            <p>Any data node without a direct, authorized relationship path to the user is aggressively pruned from the context payload. The entire access decision is cryptographically recorded as an immutable Audit Log.</p>
+            <h3>Zero-Trust Context Pruning</h3>
+            <p>Any data node without a direct, mathematically proven relationship path to the agent's passport is aggressively pruned from the RAG context. The entire access decision is recorded as an immutable Audit Log.</p>
           </div>
         </div>
         <div class="flow-step">
           <div class="step-num">04</div>
           <div class="step-content">
-            <h3>LLM Generation</h3>
-            <p>The pruned, verified, and secure Context Packet is forwarded to the LLM (OpenAI, Anthropic). The AI generates an answer strictly grounded in data the user is mathematically proven to have access to.</p>
+            <h3>Secure LLM Execution</h3>
+            <p>The pruned, verified context is forwarded to the LLM (OpenAI, Anthropic). The AI generates an answer strictly grounded in data it is proven to have access to, eliminating data leaks.</p>
           </div>
         </div>
       </div>
@@ -302,16 +302,16 @@
       <h2 class="section-title">Features</h2>
       <div class="features-grid">
         <div class="feature-card" style="padding-right:40px;">
-          <h3>Relationship-Based Access</h3>
-          <p>Evaluate multi-hop permission paths in milliseconds. If there's no mathematical path, there's no access.</p>
+          <h3>Cryptographic ReBAC</h3>
+          <p>Evaluate multi-hop permission paths in milliseconds. If there's no mathematical path, the agent has no access.</p>
         </div>
         <div class="feature-card" style="padding-right:40px;">
-          <h3>Zero Hallucinations</h3>
-          <p>Agents understand the structural 'how' and 'why' of your data, eliminating contextual hallucinations common in flat vector stores.</p>
+          <h3>Zero Data Leaks</h3>
+          <p>Agents understand the structural 'how' and 'why' of your data, eliminating catastrophic leaks common in flat vector stores.</p>
         </div>
         <div class="feature-card">
-          <h3>Immutable Audit</h3>
-          <p>Prove to compliance exactly what data your AI agents saw, and exactly why they were allowed to see it.</p>
+          <h3>Zanzibar & OpenFGA</h3>
+          <p>Fully compliant with Google Zanzibar paradigms. Prove to compliance exactly what data your AI agents saw with immutable audit logs.</p>
         </div>
       </div>
     </section>
