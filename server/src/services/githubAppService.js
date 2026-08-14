@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const { createAppAuth } = require('@octokit/auth-app');
 const logger = require('../utils/logger');
 
 class GitHubAppService {
@@ -38,6 +37,8 @@ class GitHubAppService {
    */
   async getInstallationOctokit(installationId) {
     const { Octokit } = await import('@octokit/rest');
+    const { createAppAuth } = await import('@octokit/auth-app');
+    
     if (!this.isConfigured) {
       logger.warn('[GitHub App] App not configured with private key. Falling back to public/unauthenticated Octokit.');
       return new Octokit({
