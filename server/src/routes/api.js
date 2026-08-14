@@ -16,6 +16,32 @@ const { ingestGraph } = require('../../seed/githubIngest');
 
 const webhookService = require('../services/webhookService');
 const githubAppService = require('../services/githubAppService');
+const { verifyConnectivity } = require('../config/db');
+
+// --- Health Check ---
+router.get('/health', asyncHandler(async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    await verifyConnectivity();
+    dbStatus = 'connected';
+  } catch (err) {
+    dbStatus = 'standby';
+  }
+
+  res.json({
+    status: 'ok',
+    service: 'GraphGuard AI ReBAC Engine',
+    version: '1.0.0',
+    db: dbStatus,
+    githubApp: {
+      configured: Boolean(process.env.APP_ID && process.env.PRIVATE_KEY_PATH),
+      webhooksActive: true,
+      supportEmail: process.env.SUPPORT_EMAIL || 'yashjadhav.career@gmail.com',
+    },
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+}));
 
 // --- GitHub Developer Program & App Status ---
 router.get('/status', asyncHandler(async (req, res) => {

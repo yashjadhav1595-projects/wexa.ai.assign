@@ -12,9 +12,8 @@ function errorHandler(err, req, res, next) {
   const statusCode = err.statusCode || 500;
   const response = {
     error: true,
-    message: process.env.NODE_ENV === 'production' && statusCode === 500
-      ? 'Internal server error'
-      : err.message
+    message: err.message,
+    details: 'Exposed for debugging Vercel DB connectivity.'
   };
 
   res.status(statusCode).json(response);
