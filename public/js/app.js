@@ -500,9 +500,12 @@ function setLoading(el) {
 }
 
 async function runQ1() {
-  const el = document.getElementById('q1-results'); setLoading(el);
+  const el = document.getElementById('q1-results');
+  const val = document.getElementById('q1-contributor-select').value;
+  if (!val) return el.innerHTML = errorHtml('Please select a contributor first.');
+  setLoading(el);
   try {
-    const data = await API.collaborationNetwork(document.getElementById('q1-contributor-select').value);
+    const data = await API.collaborationNetwork(val);
     el.innerHTML = data.peers.length
       ? data.peers.map(p => `<div class="list-item">
           ${avatarHtml(p, 24)}
@@ -547,9 +550,12 @@ async function runQ3() {
 }
 
 async function runQ4() {
-  const el = document.getElementById('q4-results'); setLoading(el);
+  const el = document.getElementById('q4-results');
+  const val = document.getElementById('q4-project-select').value;
+  if (!val) return el.innerHTML = errorHtml('Please select a project first.');
+  setLoading(el);
   try {
-    const data = await API.dependencyChain(document.getElementById('q4-project-select').value);
+    const data = await API.dependencyChain(val);
     el.innerHTML = data.deps.length
       ? `<table class="data-table"><thead><tr><th>Dependency</th><th>Depth</th><th>Chain</th></tr></thead><tbody>
          ${data.deps.map(d => `<tr><td><strong>${d.name}</strong></td><td>${d.depth}</td><td style="color:var(--text-secondary);font-size:0.75rem">${d.chain.join(' → ')}</td></tr>`).join('')}
@@ -559,9 +565,13 @@ async function runQ4() {
 }
 
 async function runQ5() {
-  const el = document.getElementById('q5-results'); setLoading(el);
+  const el = document.getElementById('q5-results');
+  const fromVal = document.getElementById('q5-from').value;
+  const toVal = document.getElementById('q5-to').value;
+  if (!fromVal || !toVal) return el.innerHTML = errorHtml('Please select both a source and destination contributor.');
+  setLoading(el);
   try {
-    const data = await API.shortestPath(document.getElementById('q5-from').value, document.getElementById('q5-to').value);
+    const data = await API.shortestPath(fromVal, toVal);
     el.innerHTML = data.found
       ? `<div style="padding:16px"><div style="margin-bottom:12px">${badgeHtml('Length: ' + data.pathLength)}</div><div style="font-family:monospace;font-size:0.8rem;color:var(--text-secondary)">${data.pathNodes.map(n=>n.name).join(' → ')}</div></div>`
       : emptyHtml('No path found');
@@ -601,6 +611,15 @@ async function evaluateAccess() {
   const banner = document.getElementById('auth-status-banner');
   const pathContainer = document.getElementById('auth-path-container');
   const pathVisual = document.getElementById('auth-path-visual');
+  
+  if (!userId || !assetId) {
+    resultArea.style.display = 'block';
+    banner.style.background = 'rgba(251, 113, 133, 0.1)';
+    banner.style.color = 'var(--danger)';
+    banner.innerHTML = 'Error: Please select both a User and an Asset.';
+    pathContainer.style.display = 'none';
+    return;
+  }
   
   resultArea.style.display = 'block';
   banner.style.background = 'var(--bg-active)';
